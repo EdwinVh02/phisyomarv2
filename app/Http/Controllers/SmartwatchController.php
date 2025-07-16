@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class SmartwatchController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function index()
     {
         return response()->json(Smartwatch::all(), 200);

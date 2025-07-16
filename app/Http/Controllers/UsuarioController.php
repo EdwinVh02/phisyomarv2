@@ -3,49 +3,60 @@
 namespace App\Http\Controllers;
 
 use App\Models\Usuario;
+use App\Http\Requests\StoreUsuarioRequest;
+use App\Http\Requests\UpdateUsuarioRequest;
 use Illuminate\Http\Request;
 
-class UsuarioController extends Controller
+class UsuarioController extends AuthorizedController
 {
-    public function index()
+    public function __construct()
     {
+        // Ya no necesitamos middleware aquí porque está en las rutas
+    }
+
+    public function index(Request $request)
+    {
+        // Autenticación manual
+        $user = $this->authenticateUser($request);
+        if (!$user) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        // Solo administradores pueden ver todos los usuarios
+        if ($user->rol_id !== 1) {
+            return response()->json(['error' => 'Acceso denegado'], 403);
+        }
+
         return response()->json(Usuario::all(), 200);
     }
 
-    public function store(Request $r)
+    public function store(StoreUsuarioRequest $request)
     {
-        $data = $r->validate([
-            'nombre'            => 'required|string|max:100',
-            'apellido_paterno'  => 'required|string|max:100',
-            'apellido_materno'  => 'nullable|string|max:100',
-            'correo_electronico'             => 'required|email|unique:usuarios,email',
-            'telefono'          => 'nullable|string|max:20',
-            'contraseña'          => 'required|string|min:6',
-            'rol_id'            => 'required|exists:rols,id',
-            'estatus'           => 'nullable|in:activo,inactivo', // o integer si tu tabla lo maneja como 1/0
-        ]);
+        // Solo administradores pueden crear usuarios
+        $error = $this->requireAdmin($request);
+        if ($error) return $error;
+
+        $data = $request->validated();
         $data['contraseña'] = bcrypt($data['contraseña']);
         return response()->json(Usuario::create($data), 201);
     }
 
-    public function show(Usuario $usuario)
+    public function show(Request $request, Usuario $usuario)
     {
+        // Solo administradores pueden ver detalles de usuarios
+        $error = $this->requireAdmin($request);
+        if ($error) return $error;
+
         return response()->json($usuario, 200);
     }
 
-    public function update(Request $r, Usuario $usuario)
+    public function update(UpdateUsuarioRequest $request, Usuario $usuario)
     {
-        $data = $r->validate([
-            'nombre'            => 'sometimes|string|max:100',
-            'apellido_paterno'  => 'sometimes|string|max:100',
-            'apellido_materno'  => 'nullable|string|max:100',
-            'correo_electronico' => 'sometimes|email|unique:usuarios,email,' . $usuario->id,
-            'telefono'          => 'nullable|string|max:20',
-            'contraseña'          => 'sometimes|string|min:6',
-            'rol_id'            => 'sometimes|exists:rols,id',
-            'estatus'           => 'nullable|in:activo,inactivo',
-            'nombre',
-        ]);
+        // Solo administradores pueden actualizar usuarios
+        $error = $this->requireAdmin($request);
+        if ($error) return $error;
+
+        $data = $request->validated();
         if (isset($data['contraseña'])) {
             $data['contraseña'] = bcrypt($data['contraseña']);
         }
@@ -53,8 +64,12 @@ class UsuarioController extends Controller
         return response()->json($usuario, 200);
     }
 
-    public function destroy(Usuario $usuario)
+    public function destroy(Request $request, Usuario $usuario)
     {
+        // Solo administradores pueden eliminar usuarios
+        $error = $this->requireAdmin($request);
+        if ($error) return $error;
+
         $usuario->delete();
         return response()->json(['message' => 'Usuario eliminado correctamente'], 200);
     }

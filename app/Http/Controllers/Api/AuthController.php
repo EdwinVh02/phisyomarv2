@@ -19,9 +19,13 @@ class AuthController extends Controller
             'correo_electronico' => 'required|email|unique:usuarios,correo_electronico',
             'contraseña' => 'required|string|min:8|confirmed',
             'telefono' => 'required|string|max:20',
+            'direccion' => 'nullable|string|max:255',
             'fecha_nacimiento' => 'required|date',
             'sexo' => 'required|in:Masculino,Femenino,Otro',
             'curp' => 'required|string|size:18|unique:usuarios,curp',
+            'ocupacion' => 'nullable|string|max:100',
+            'estatus' => 'nullable|in:activo,inactivo,suspendido',
+            'rol_id' => 'nullable|integer|exists:roles,id',
         ], [], [
             'contraseña' => 'contraseña',
             'correo_electronico' => 'correo electrónico',
@@ -34,11 +38,13 @@ class AuthController extends Controller
             'correo_electronico' => $request->correo_electronico,
             'contraseña' => $request->contraseña,
             'telefono' => $request->telefono,
+            'direccion' => $request->direccion,
             'fecha_nacimiento' => $request->fecha_nacimiento,
             'sexo' => $request->sexo,
             'curp' => $request->curp,
-            'estatus' => 'activo',
-            'rol_id' => 4
+            'ocupacion' => $request->ocupacion,
+            'estatus' => $request->estatus ?? 'activo',
+            'rol_id' => $request->rol_id ?? 4
         ]);
 
 

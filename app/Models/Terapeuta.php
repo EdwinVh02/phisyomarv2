@@ -2,34 +2,43 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Terapeuta extends Model
 {
-    protected $table = 'terapeuta';
-    protected $primaryKey = 'Id';
-    public $timestamps = false;
+
+    use HasFactory;
+
+    protected $table = 'terapeutas';
+    protected $primaryKey = 'id';
+    public $timestamps = true;
 
     protected $fillable = [
-        'Id',
-        'Cedula_Profesional',
-        'Especialidad_Principal',
-        'Experiencia_Anios',
-        'Estatus'
+        'id',
+        'cedula_profesional',
+        'especialidad_principal',
+        'experiencia_anios',
+        'estatus'
     ];
 
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'Id');
+        return $this->belongsTo(Usuario::class, 'id');
     }
 
     public function especialidades()
     {
-        return $this->belongsToMany(Especialidad::class, 'terapeuta_especialidad', 'TerapeutaId', 'EspecialidadId');
+        return $this->belongsToMany(Especialidad::class, 'terapeuta_especialidad', 'terapeuta_id', 'especialidad_id');
     }
 
     public function experiencias()
     {
-        return $this->hasMany(ExperienciaTerapeuta::class, 'TerapeutaId');
+        return $this->hasMany(ExperienciaTerapeuta::class, 'terapeuta_id');
+    }
+
+    public function valoraciones()
+    {
+        return $this->hasMany(Valoracion::class, 'terapeuta_id');
     }
 }

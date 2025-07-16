@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class RecepcionistaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function index()
     {
         return response()->json(Recepcionista::all(), 200);

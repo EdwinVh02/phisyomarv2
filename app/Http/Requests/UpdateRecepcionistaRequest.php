@@ -10,8 +10,7 @@ class UpdateRecepcionistaRequest extends FormRequest
     public function rules()
     {
         return [
-            'usuario_id' => 'sometimes|exists:usuarios,id',
-            'turno'      => 'nullable|string|max:30',
+            'usuario_id' => 'sometimes|exists:usuarios,id'
         ];
     }
 

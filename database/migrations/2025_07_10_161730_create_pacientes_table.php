@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('tutor_parentesco', 50)->nullable();
             $table->string('tutor_direccion', 150)->nullable();
             $table->unsignedBigInteger('historial_medico_id')->nullable();
+            $table->timestamps();
 
             // Índice para FK
             $table->index('historial_medico_id');

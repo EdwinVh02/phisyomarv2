@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class BitacoraController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function index()
     {
         return response()->json(Bitacora::all(), 200);

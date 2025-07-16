@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('especialidad_principal', 100)->nullable();
             $table->integer('experiencia_anios')->nullable();
             $table->enum('estatus', ['activo', 'inactivo', 'suspendido'])->default('activo');
+            $table->timestamps();
             $table->foreign('id')->references('id')->on('usuarios');
         });
     }

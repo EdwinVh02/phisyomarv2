@@ -3,32 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Models\Encuesta;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreEncuestaRequest;
+use App\Http\Requests\UpdateEncuestaRequest;
 
-class EncuestaController extends Controller
+class EncuestaController extends BaseResourceController
 {
-    public function index()
+    /**
+     * Get the model class for this controller
+     */
+    protected function getModelClass(): string
     {
-        return response()->json(Encuesta::all(), 200);
+        return Encuesta::class;
     }
-    public function store(Request $r)
+
+    /**
+     * Get the store request class
+     */
+    protected function getStoreRequestClass(): ?string
     {
-        $data = $r->validate(['nombre' => 'required|string']);
-        return response()->json(Encuesta::create($data), 201);
+        return StoreEncuestaRequest::class;
     }
-    public function show(Encuesta $encuesta)
+
+    /**
+     * Get the update request class
+     */
+    protected function getUpdateRequestClass(): ?string
     {
-        return response()->json($encuesta, 200);
-    }
-    public function update(Request $r, Encuesta $encuesta)
-    {
-        $data = $r->validate(['nombre' => 'sometimes|string']);
-        $encuesta->update($data);
-        return response()->json($encuesta, 200);
-    }
-    public function destroy(Encuesta $encuesta)
-    {
-        $encuesta->delete();
-        return response()->json(['message' => 'Eliminado'], 200);
+        return UpdateEncuestaRequest::class;
     }
 }

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Recepcionista extends Model
 {
-    protected $table = 'recepcionista';
+    use HasFactory;
+
+    protected $table = 'recepcionistas';
     protected $primaryKey = 'Id';
     public $timestamps = false;
 

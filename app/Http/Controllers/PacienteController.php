@@ -3,10 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Paciente;
+use App\Http\Requests\StorePacienteRequest;
+use App\Http\Requests\UpdatePacienteRequest;
 use Illuminate\Http\Request;
 
 class PacienteController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+
+    }
+
     /**
      * Listar pacientes con paginación opcional.
      */
@@ -19,21 +27,9 @@ class PacienteController extends Controller
     /**
      * Crear un nuevo paciente.
      */
-    public function store(Request $request)
+    public function store(StorePacienteRequest $request)
     {
-        $data = $request->validate([
-            'usuario_id'                     => 'required|exists:usuarios,id',
-            'contacto_emergencia_nombre'     => 'nullable|string|max:100',
-            'contacto_emergencia_telefono'   => 'nullable|string|max:20',
-            'contacto_emergencia_parentesco' => 'nullable|string|max:50',
-            'tutor_nombre'                   => 'nullable|string|max:100',
-            'tutor_telefono'                 => 'nullable|string|max:20',
-            'tutor_parentesco'               => 'nullable|string|max:50',
-            'tutor_direccion'                => 'nullable|string|max:150',
-            'historial_medico_id'            => 'nullable|exists:historial_medicos,id',
-            // Si tienes más campos, agrégalos aquí
-        ]);
-        $paciente = Paciente::create($data);
+        $paciente = Paciente::create($request->validated());
         return response()->json($paciente, 201);
     }
 
@@ -48,20 +44,9 @@ class PacienteController extends Controller
     /**
      * Actualizar un paciente.
      */
-    public function update(Request $request, Paciente $paciente)
+    public function update(UpdatePacienteRequest $request, Paciente $paciente)
     {
-        $data = $request->validate([
-            'contacto_emergencia_nombre'     => 'nullable|string|max:100',
-            'contacto_emergencia_telefono'   => 'nullable|string|max:20',
-            'contacto_emergencia_parentesco' => 'nullable|string|max:50',
-            'tutor_nombre'                   => 'nullable|string|max:100',
-            'tutor_telefono'                 => 'nullable|string|max:20',
-            'tutor_parentesco'               => 'nullable|string|max:50',
-            'tutor_direccion'                => 'nullable|string|max:150',
-            'historial_medico_id'            => 'nullable|exists:historial_medicos,id',
-            // Si tienes más campos, agrégalos aquí
-        ]);
-        $paciente->update($data);
+        $paciente->update($request->validated());
         return response()->json($paciente, 200);
     }
 

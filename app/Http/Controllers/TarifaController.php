@@ -3,32 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tarifa;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTarifaRequest;
+use App\Http\Requests\UpdateTarifaRequest;
 
-class TarifaController extends Controller
+class TarifaController extends BaseResourceController
 {
-    public function index()
+    /**
+     * Get the model class for this controller
+     */
+    protected function getModelClass(): string
     {
-        return response()->json(Tarifa::all(), 200);
+        return Tarifa::class;
     }
-    public function store(Request $r)
+
+    /**
+     * Get the store request class
+     */
+    protected function getStoreRequestClass(): ?string
     {
-        $data = $r->validate(['descripcion' => 'required|string', 'monto' => 'required|numeric']);
-        return response()->json(Tarifa::create($data), 201);
+        return StoreTarifaRequest::class;
     }
-    public function show(Tarifa $tarifa)
+
+    /**
+     * Get the update request class
+     */
+    protected function getUpdateRequestClass(): ?string
     {
-        return response()->json($tarifa, 200);
-    }
-    public function update(Request $r, Tarifa $tarifa)
-    {
-        $data = $r->validate(['descripcion' => 'sometimes|string', 'monto' => 'sometimes|numeric']);
-        $tarifa->update($data);
-        return response()->json($tarifa, 200);
-    }
-    public function destroy(Tarifa $tarifa)
-    {
-        $tarifa->delete();
-        return response()->json(['message' => 'Eliminado'], 200);
+        return UpdateTarifaRequest::class;
     }
 }

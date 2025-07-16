@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Administrador extends Model
 {
-    protected $table = 'administradors';
+    use HasFactory;
+
+    protected $table = 'administradores';
     protected $primaryKey = 'id';
     public $timestamps = false;
 
-    protected $fillable = ['id', 'cedula_profesional', 'clinicaid'];
+    protected $fillable = ['id', 'cedula_profesional', 'clinica_id'];
 
     public function usuario()
     {
@@ -19,6 +22,6 @@ class Administrador extends Model
 
     public function clinica()
     {
-        return $this->belongsTo(Clinica::class, 'clinicaid');
+        return $this->belongsTo(Clinica::class, 'clinica_id');
     }
 }

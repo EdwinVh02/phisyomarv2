@@ -12,7 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Aquí puedes agregar middlewares globales si los necesitas
+        // Configurar para que las rutas API devuelvan JSON en errores de autenticación
+        $middleware->redirectUsersTo(fn () => null);
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

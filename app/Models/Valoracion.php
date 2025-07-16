@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Valoracion extends Model
 {
-    protected $table = 'valoracion';
+    protected $table = 'valoraciones';
 
     protected $fillable = [
         'Puntuacion',
@@ -17,11 +17,11 @@ class Valoracion extends Model
 
     public function paciente()
     {
-        return $this->belongsTo(Paciente::class, 'PacienteId');
+        return $this->belongsTo(Paciente::class, 'paciente_id');
     }
 
     public function terapeuta()
     {
-        return $this->belongsTo(Terapeuta::class, 'TerapeutaId');
+        return $this->belongsTo(Terapeuta::class, 'terapeuta_id');
     }
 }

@@ -9,12 +9,19 @@ class Tarjeta extends Model
     protected $table = 'tarjeta';
 
     protected $fillable = [
-        'Numero',
         'Titular',
         'Banco',
-        'CVV',
         'Fecha_Vencimiento',
         'PagoId'
+    ];
+
+    protected $hidden = [
+        'Numero',
+        'CVV'
+    ];
+
+    protected $casts = [
+        'Fecha_Vencimiento' => 'date'
     ];
 
     public function pago()

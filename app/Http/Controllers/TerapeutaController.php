@@ -3,26 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\Terapeuta;
+use App\Http\Requests\StoreTerapeutaRequest;
+use App\Http\Requests\UpdateTerapeutaRequest;
 use Illuminate\Http\Request;
 
 class TerapeutaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function index()
     {
         return response()->json(Terapeuta::all(), 200);
     }
-    public function store(Request $r)
+    public function store(StoreTerapeutaRequest $request)
     {
-        $data = $r->validate(['usuario_id' => 'required|exists:usuarios,id', 'cedula_profesional' => 'required|string']);
+        $data = $request->validated();
         return response()->json(Terapeuta::create($data), 201);
     }
     public function show(Terapeuta $terapeuta)
     {
         return response()->json($terapeuta, 200);
     }
-    public function update(Request $r, Terapeuta $terapeuta)
+    public function update(UpdateTerapeutaRequest $request, Terapeuta $terapeuta)
     {
-        $data = $r->validate(['cedula_profesional' => 'sometimes|string']);
+        $data = $request->validated();
         $terapeuta->update($data);
         return response()->json($terapeuta, 200);
     }

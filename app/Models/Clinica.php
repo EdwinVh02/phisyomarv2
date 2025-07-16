@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Clinica extends Model
 {
-    protected $table = 'clinica';
+    protected $table = 'clinicas';
 
     protected $fillable = [
         'Nombre',
@@ -22,6 +22,6 @@ class Clinica extends Model
 
     public function administradores()
     {
-        return $this->hasMany(Administrador::class, 'ClinicaId');
+        return $this->hasMany(Administrador::class, 'clinica_id');
     }
 }

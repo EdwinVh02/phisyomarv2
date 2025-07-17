@@ -66,6 +66,13 @@ Route::prefix('paciente')->middleware('auth:sanctum')->group(function () {
     Route::put('cancelar-cita/{id}', [CitaController::class, 'cancelarCita']);
 });
 
+// RUTAS PARA DISPONIBILIDAD DE CITAS
+Route::prefix('citas')->group(function () {
+    Route::post('calendario-disponibilidad', [CitaController::class, 'calendarioDisponibilidad']);
+    Route::post('horas-disponibles', [CitaController::class, 'horasDisponibles']);
+    Route::post('fechas-disponibles', [CitaController::class, 'fechasDisponibles']);
+});
+
 // RUTAS ESPECÍFICAS PARA TERAPEUTAS
 Route::prefix('terapeuta')->middleware('auth:sanctum')->group(function () {
     Route::get('mis-citas', [CitaController::class, 'misCitasTerapeuta']);
@@ -111,6 +118,9 @@ Route::post('test-create-cita', function (\Illuminate\Http\Request $request) {
 
 // Ruta de prueba para agendar cita sin middleware (para debugging)
 Route::post('test-agendar-cita', [CitaController::class, 'agendarCita']);
+
+// Ruta de prueba para calendario sin middleware
+Route::post('test-calendario-disponibilidad', [CitaController::class, 'calendarioDisponibilidad']);
 
 // Rutas de prueba sin middleware para debugging
 Route::get('test-usuarios', function () {

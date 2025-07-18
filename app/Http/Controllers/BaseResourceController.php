@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 
 abstract class BaseResourceController extends Controller
 {
     protected $model;
+
     protected $storeRequest;
+
     protected $updateRequest;
 
     public function __construct()
@@ -42,9 +44,10 @@ abstract class BaseResourceController extends Controller
      */
     protected function getModel()
     {
-        if (!$this->model) {
+        if (! $this->model) {
             $this->model = app($this->getModelClass());
         }
+
         return $this->model;
     }
 
@@ -55,11 +58,11 @@ abstract class BaseResourceController extends Controller
     {
         $perPage = $request->query('per_page', 20);
         $model = $this->getModel();
-        
+
         if ($perPage === 'all') {
             return response()->json($model->all(), 200);
         }
-        
+
         return response()->json($model->paginate($perPage), 200);
     }
 
@@ -70,6 +73,7 @@ abstract class BaseResourceController extends Controller
     {
         $data = $this->getValidatedData($request, 'store');
         $resource = $this->getModel()->create($data);
+
         return response()->json($resource, 201);
     }
 
@@ -79,6 +83,7 @@ abstract class BaseResourceController extends Controller
     public function show($id)
     {
         $resource = $this->getModel()->findOrFail($id);
+
         return response()->json($resource, 200);
     }
 
@@ -90,6 +95,7 @@ abstract class BaseResourceController extends Controller
         $resource = $this->getModel()->findOrFail($id);
         $data = $this->getValidatedData($request, 'update');
         $resource->update($data);
+
         return response()->json($resource, 200);
     }
 
@@ -100,6 +106,7 @@ abstract class BaseResourceController extends Controller
     {
         $resource = $this->getModel()->findOrFail($id);
         $resource->delete();
+
         return response()->json(['message' => 'Eliminado correctamente'], 200);
     }
 
@@ -113,6 +120,7 @@ abstract class BaseResourceController extends Controller
             $formRequest = app($requestClass);
             $formRequest->setContainer(app());
             $formRequest->setRedirector(app('redirect'));
+
             return $formRequest->validated();
         }
 
@@ -121,6 +129,7 @@ abstract class BaseResourceController extends Controller
             $formRequest = app($requestClass);
             $formRequest->setContainer(app());
             $formRequest->setRedirector(app('redirect'));
+
             return $formRequest->validated();
         }
 

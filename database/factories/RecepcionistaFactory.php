@@ -17,7 +17,7 @@ class RecepcionistaFactory extends Factory
     public function definition(): array
     {
         return [
-            //No hay datos adicionales
+            // No hay datos adicionales
         ];
     }
 }

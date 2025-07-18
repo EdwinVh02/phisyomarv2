@@ -12,7 +12,7 @@ class Valoracion extends Model
         'Puntuacion',
         'Fecha_Hora',
         'PacienteId',
-        'TerapeutaId'
+        'TerapeutaId',
     ];
 
     public function paciente()

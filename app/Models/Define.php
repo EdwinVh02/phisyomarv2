@@ -11,6 +11,6 @@ class Define extends Pivot
     protected $fillable = [
         'PadecimientoId',
         'TratamientoId',
-        'AdministradorId'
+        'AdministradorId',
     ];
 }

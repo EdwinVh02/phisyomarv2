@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Terapeuta extends Model
 {
-
     use HasFactory;
 
     protected $table = 'terapeutas';
+
     protected $primaryKey = 'id';
+
     public $timestamps = true;
 
     protected $fillable = [
@@ -19,7 +20,7 @@ class Terapeuta extends Model
         'cedula_profesional',
         'especialidad_principal',
         'experiencia_anios',
-        'estatus'
+        'estatus',
     ];
 
     public function usuario()

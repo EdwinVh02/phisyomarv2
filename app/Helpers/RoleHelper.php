@@ -99,7 +99,7 @@ class RoleHelper
      */
     public static function getRolePermissions(Usuario $user): array
     {
-        if (!$user->rol || !$user->rol->permisos) {
+        if (! $user->rol || ! $user->rol->permisos) {
             return [];
         }
 
@@ -112,6 +112,7 @@ class RoleHelper
     public static function hasPermission(Usuario $user, string $permission): bool
     {
         $permissions = self::getRolePermissions($user);
+
         return isset($permissions[$permission]) && $permissions[$permission] === true;
     }
 
@@ -129,8 +130,8 @@ class RoleHelper
                 '/api/especialidades',
                 '/api/padecimientos',
                 '/api/tarifas',
-                '/api/tratamientos'
-            ]
+                '/api/tratamientos',
+            ],
         ];
 
         switch ($roleId) {
@@ -147,7 +148,7 @@ class RoleHelper
                     '/api/pagos',
                     '/api/citas',
                     '/api/registros',
-                    '/api/historiales'
+                    '/api/historiales',
                 ];
                 break;
 
@@ -158,7 +159,7 @@ class RoleHelper
                     '/api/terapeuta/estadisticas',
                     '/api/citas',
                     '/api/registros',
-                    '/api/valoraciones'
+                    '/api/valoraciones',
                 ];
                 break;
 
@@ -170,7 +171,7 @@ class RoleHelper
                     '/api/pagos',
                     '/api/encuestas',
                     '/api/paquetes_paciente',
-                    '/api/paquetes_sesion'
+                    '/api/paquetes_sesion',
                 ];
                 break;
 
@@ -178,7 +179,7 @@ class RoleHelper
                 $routes['paciente'] = [
                     '/api/paciente/mis-citas',
                     '/api/paciente/mi-historial',
-                    '/api/paciente/agendar-cita'
+                    '/api/paciente/agendar-cita',
                 ];
                 break;
         }
@@ -192,7 +193,7 @@ class RoleHelper
     public static function canAccessRoute(Usuario $user, string $route): bool
     {
         $allowedRoutes = self::getAllowedRoutes($user);
-        
+
         foreach ($allowedRoutes as $routeGroup) {
             if (in_array($route, $routeGroup)) {
                 return true;

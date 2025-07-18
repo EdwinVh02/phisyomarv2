@@ -13,6 +13,6 @@ class Adjunto extends Model
         'EntidadId',
         'Nombre_Archivo',
         'URL',
-        'Fecha_Subida'
+        'Fecha_Subida',
     ];
 }

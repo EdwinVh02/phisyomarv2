@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cita;
 use App\Http\Requests\StoreCitaRequest;
 use App\Http\Requests\UpdateCitaRequest;
-use Illuminate\Http\Request;
+use App\Models\Cita;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CitaController extends Controller
 {
@@ -19,69 +20,97 @@ class CitaController extends Controller
     {
         return response()->json(Cita::all(), 200);
     }
+
     public function store(StoreCitaRequest $request)
     {
         $data = $request->validated();
+
         return response()->json(Cita::create($data), 201);
     }
+
     public function show(Cita $cita)
     {
         return response()->json($cita, 200);
     }
+
     public function update(UpdateCitaRequest $request, Cita $cita)
     {
         $data = $request->validated();
         $cita->update($data);
+
         return response()->json($cita, 200);
     }
+
     public function destroy(Cita $cita)
     {
         $cita->delete();
-        return response()->json(['message' => 'Eliminado'], 200);
+
+        return response()->json(['mensaje' => 'Cita eliminada exitosamente'], 200);
     }
 
     // Métodos específicos para pacientes
     public function misCitas(Request $request)
     {
         $user = $request->user();
-        
+
         // Verificar que el usuario sea un paciente
         if ($user->rol_id !== 4) {
-            return response()->json(['error' => 'No autorizado'], 403);
+            return response()->json(['error' => 'No autorizado. Solo los pacientes pueden ver sus citas.'], 403);
         }
 
         $citas = Cita::where('paciente_id', $user->id)
-                    ->with(['terapeuta.usuario', 'registro'])
-                    ->orderBy('fecha_hora', 'desc')
-                    ->get();
+            ->with(['terapeuta.usuario', 'registro'])
+            ->orderBy('fecha_hora', 'desc')
+            ->get();
 
         return response()->json($citas, 200);
+    }
+
+    public function miCitaDetalle(Request $request, $id)
+    {
+        $user = $request->user();
+
+        // Verificar que el usuario sea un paciente
+        if ($user->rol_id !== 4) {
+            return response()->json(['error' => 'No autorizado. Solo los pacientes pueden ver sus citas.'], 403);
+        }
+
+        $cita = Cita::where('id', $id)
+            ->where('paciente_id', $user->id)
+            ->with(['terapeuta.usuario', 'registro'])
+            ->first();
+
+        if (!$cita) {
+            return response()->json(['error' => 'Cita no encontrada'], 404);
+        }
+
+        return response()->json($cita, 200);
     }
 
     public function agendarCita(Request $request)
     {
         $user = $request->user();
-        
+
         // Si no hay usuario (modo de prueba), usar paciente ID 200
-        if (!$user) {
+        if (! $user) {
             $pacienteId = 200; // ID del paciente de prueba creado
-            \Log::info('Modo de prueba - usando paciente ID: ' . $pacienteId);
+            Log::info('Modo de prueba - usando paciente ID: ' . $pacienteId);
         } else {
             // Verificar que el usuario sea un paciente
             if ($user->rol_id !== 4) {
-                return response()->json(['error' => 'No autorizado'], 403);
+                return response()->json(['error' => 'No autorizado. Solo los pacientes pueden agendar citas.'], 403);
             }
 
             // Verificar que existe el registro del paciente
             $paciente = \App\Models\Paciente::find($user->id);
-            if (!$paciente) {
+            if (! $paciente) {
                 return response()->json(['error' => 'Registro de paciente no encontrado'], 404);
             }
             $pacienteId = $user->id;
         }
 
         // Si no se proporciona terapeuta_id en modo de prueba, usar ID 100
-        if (!$user && !$request->has('terapeuta_id')) {
+        if (! $user && ! $request->has('terapeuta_id')) {
             $request->merge(['terapeuta_id' => 100]); // ID del terapeuta de prueba
         }
 
@@ -93,7 +122,7 @@ class CitaController extends Controller
                 new \App\Rules\CitaDisponible(
                     $request->input('terapeuta_id'),
                     $request->input('duracion', 60)
-                )
+                ),
             ],
             'tipo' => 'required|string|max:50',
             'duracion' => 'nullable|integer|min:15|max:240',
@@ -121,12 +150,12 @@ class CitaController extends Controller
 
         try {
             // Log para debugging
-            \Log::info('Intentando crear cita', [
+            Log::info('Intentando crear cita', [
                 'paciente_id' => $pacienteId,
                 'terapeuta_id' => $validatedData['terapeuta_id'],
                 'fecha_hora' => $validatedData['fecha_hora'],
                 'tipo' => $validatedData['tipo'],
-                'motivo' => $validatedData['motivo']
+                'motivo' => $validatedData['motivo'],
             ]);
 
             // Crear cita solo con campos básicos obligatorios
@@ -139,25 +168,25 @@ class CitaController extends Controller
                 'paciente_id' => $pacienteId,
                 'terapeuta_id' => $validatedData['terapeuta_id'],
                 // Solo agregar campos opcionales si tienen valor
-                'ubicacion' => !empty($validatedData['ubicacion']) ? $validatedData['ubicacion'] : null,
-                'equipo_asignado' => !empty($validatedData['equipo_asignado']) ? $validatedData['equipo_asignado'] : null,
-                'observaciones' => !empty($validatedData['observaciones']) ? $validatedData['observaciones'] : null,
-                'escala_dolor_eva_inicio' => !empty($validatedData['escala_dolor_eva_inicio']) ? (int)$validatedData['escala_dolor_eva_inicio'] : null,
-                'como_fue_lesion' => !empty($validatedData['como_fue_lesion']) ? $validatedData['como_fue_lesion'] : null,
-                'antecedentes_patologicos' => !empty($validatedData['antecedentes_patologicos']) ? $validatedData['antecedentes_patologicos'] : null,
-                'antecedentes_no_patologicos' => !empty($validatedData['antecedentes_no_patologicos']) ? $validatedData['antecedentes_no_patologicos'] : null,
+                'ubicacion' => ! empty($validatedData['ubicacion']) ? $validatedData['ubicacion'] : null,
+                'equipo_asignado' => ! empty($validatedData['equipo_asignado']) ? $validatedData['equipo_asignado'] : null,
+                'observaciones' => ! empty($validatedData['observaciones']) ? $validatedData['observaciones'] : null,
+                'escala_dolor_eva_inicio' => ! empty($validatedData['escala_dolor_eva_inicio']) ? (int) $validatedData['escala_dolor_eva_inicio'] : null,
+                'como_fue_lesion' => ! empty($validatedData['como_fue_lesion']) ? $validatedData['como_fue_lesion'] : null,
+                'antecedentes_patologicos' => ! empty($validatedData['antecedentes_patologicos']) ? $validatedData['antecedentes_patologicos'] : null,
+                'antecedentes_no_patologicos' => ! empty($validatedData['antecedentes_no_patologicos']) ? $validatedData['antecedentes_no_patologicos'] : null,
             ]);
 
             return response()->json([
-                'message' => 'Cita agendada exitosamente',
-                'cita' => $cita->load(['terapeuta.usuario'])
+                'mensaje' => 'Cita agendada exitosamente',
+                'cita' => $cita->load(['terapeuta.usuario']),
             ], 201);
-            
         } catch (\Exception $e) {
-            \Log::error('Error al crear cita: ' . $e->getMessage());
+            Log::error('Error al crear cita: ' . $e->getMessage());
+
             return response()->json([
                 'error' => 'Error al agendar la cita',
-                'details' => $e->getMessage()
+                'details' => $e->getMessage(),
             ], 500);
         }
     }
@@ -165,17 +194,17 @@ class CitaController extends Controller
     public function cancelarCita(Request $request, $id)
     {
         $user = $request->user();
-        
+
         // Verificar que el usuario sea un paciente
         if ($user->rol_id !== 4) {
-            return response()->json(['error' => 'No autorizado'], 403);
+            return response()->json(['error' => 'No autorizado. Solo los pacientes pueden cancelar sus citas.'], 403);
         }
 
         $cita = Cita::where('id', $id)
-                   ->where('paciente_id', $user->id)
-                   ->first();
+            ->where('paciente_id', $user->id)
+            ->first();
 
-        if (!$cita) {
+        if (! $cita) {
             return response()->json(['error' => 'Cita no encontrada'], 404);
         }
 
@@ -185,23 +214,23 @@ class CitaController extends Controller
 
         $cita->update(['estado' => 'cancelada']);
 
-        return response()->json(['message' => 'Cita cancelada exitosamente', 'cita' => $cita], 200);
+        return response()->json(['mensaje' => 'Cita cancelada exitosamente', 'cita' => $cita], 200);
     }
 
     // Métodos específicos para terapeutas
     public function misCitasTerapeuta(Request $request)
     {
         $user = $request->user();
-        
+
         // Verificar que el usuario sea un terapeuta
         if ($user->rol_id !== 2) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
         $citas = Cita::where('terapeuta_id', $user->id)
-                    ->with(['paciente.usuario', 'registro'])
-                    ->orderBy('fecha_hora', 'desc')
-                    ->get();
+            ->with(['paciente.usuario', 'registro'])
+            ->orderBy('fecha_hora', 'desc')
+            ->get();
 
         return response()->json($citas, 200);
     }
@@ -215,7 +244,7 @@ class CitaController extends Controller
             'fecha_hora' => 'required|date',
             'terapeuta_id' => 'required|exists:terapeutas,id',
             'duracion' => 'nullable|integer|min:15|max:240',
-            'cita_id' => 'nullable|exists:citas,id'
+            'cita_id' => 'nullable|exists:citas,id',
         ]);
 
         $fechaHora = Carbon::parse($request->fecha_hora);
@@ -233,21 +262,21 @@ class CitaController extends Controller
             'fecha_formateada' => $fechaHora->format('d/m/Y'),
             'hora_formateada' => $fechaHora->format('H:i'),
             'duracion' => $duracion,
-            'terapeuta_id' => $request->terapeuta_id
+            'terapeuta_id' => $request->terapeuta_id,
         ];
 
-        if (!$disponible) {
+        if (! $disponible) {
             // Obtener información sobre el conflicto
             $citaConflicto = Cita::where('terapeuta_id', $request->terapeuta_id)
                 ->where('estado', '!=', 'cancelada')
-                ->where(function($query) use ($fechaHora, $duracion) {
+                ->where(function ($query) use ($fechaHora, $duracion) {
                     $fechaFin = $fechaHora->copy()->addMinutes($duracion);
-                    $query->where(function($q) use ($fechaHora, $fechaFin) {
+                    $query->where(function ($q) use ($fechaHora) {
                         $q->where('fecha_hora', '<=', $fechaHora)
-                          ->whereRaw('DATE_ADD(fecha_hora, INTERVAL COALESCE(duracion, 60) MINUTE) > ?', [$fechaHora]);
-                    })->orWhere(function($q) use ($fechaHora, $fechaFin) {
+                            ->whereRaw('DATE_ADD(fecha_hora, INTERVAL COALESCE(duracion, 60) MINUTE) > ?', [$fechaHora]);
+                    })->orWhere(function ($q) use ($fechaHora, $fechaFin) {
                         $q->where('fecha_hora', '>=', $fechaHora)
-                          ->where('fecha_hora', '<', $fechaFin);
+                            ->where('fecha_hora', '<', $fechaFin);
                     });
                 })
                 ->first();
@@ -256,7 +285,7 @@ class CitaController extends Controller
                 $response['conflicto'] = [
                     'cita_id' => $citaConflicto->id,
                     'hora_conflicto' => $citaConflicto->fecha_hora->format('H:i'),
-                    'duracion_conflicto' => $citaConflicto->duracion ?? 60
+                    'duracion_conflicto' => $citaConflicto->duracion ?? 60,
                 ];
             }
 
@@ -268,7 +297,7 @@ class CitaController extends Controller
             );
 
             $response['horas_disponibles'] = $horasDisponibles;
-            $response['mensaje'] = empty($horasDisponibles) 
+            $response['mensaje'] = empty($horasDisponibles)
                 ? 'No hay horarios disponibles para esta fecha. Selecciona otra fecha.'
                 : 'Horario ocupado. Elige una de las horas disponibles.';
         } else {
@@ -286,7 +315,7 @@ class CitaController extends Controller
         $request->validate([
             'fecha' => 'required|date',
             'terapeuta_id' => 'required|exists:terapeutas,id',
-            'duracion' => 'nullable|integer|min:15|max:240'
+            'duracion' => 'nullable|integer|min:15|max:240',
         ]);
 
         $horas = Cita::horasDisponibles(
@@ -299,7 +328,7 @@ class CitaController extends Controller
             'fecha' => $request->fecha,
             'terapeuta_id' => $request->terapeuta_id,
             'horas_disponibles' => $horas,
-            'total_horas' => count($horas)
+            'total_horas' => count($horas),
         ]);
     }
 
@@ -312,7 +341,7 @@ class CitaController extends Controller
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
             'terapeuta_id' => 'required|exists:terapeutas,id',
-            'duracion' => 'nullable|integer|min:15|max:240'
+            'duracion' => 'nullable|integer|min:15|max:240',
         ]);
 
         $fechas = Cita::fechasDisponibles(
@@ -327,7 +356,7 @@ class CitaController extends Controller
             'fecha_fin' => $request->fecha_fin,
             'terapeuta_id' => $request->terapeuta_id,
             'fechas_disponibles' => $fechas,
-            'total_fechas' => count($fechas)
+            'total_fechas' => count($fechas),
         ]);
     }
 
@@ -338,7 +367,7 @@ class CitaController extends Controller
     {
         $request->validate([
             'terapeuta_id' => 'required|exists:terapeutas,id',
-            'duracion' => 'nullable|integer|min:15|max:240'
+            'duracion' => 'nullable|integer|min:15|max:240',
         ]);
 
         $proximoHorario = Cita::proximoHorarioDisponible(
@@ -346,16 +375,16 @@ class CitaController extends Controller
             $request->duracion ?? 60
         );
 
-        if (!$proximoHorario) {
+        if (! $proximoHorario) {
             return response()->json([
                 'mensaje' => 'No hay horarios disponibles en los próximos 30 días',
-                'proximo_horario' => null
+                'proximo_horario' => null,
             ], 404);
         }
 
         return response()->json([
             'proximo_horario' => $proximoHorario,
-            'mensaje' => 'Próximo horario disponible encontrado'
+            'mensaje' => 'Próximo horario disponible encontrado',
         ]);
     }
 
@@ -368,7 +397,7 @@ class CitaController extends Controller
             'terapeuta_id' => 'required|exists:terapeutas,id',
             'mes' => 'required|integer|min:1|max:12',
             'anio' => 'required|integer|min:2024|max:2030',
-            'duracion' => 'nullable|integer|min:15|max:240'
+            'duracion' => 'nullable|integer|min:15|max:240',
         ]);
 
         $terapeutaId = $request->terapeuta_id;
@@ -385,7 +414,7 @@ class CitaController extends Controller
             ->where('estado', '!=', 'cancelada')
             ->whereBetween('fecha_hora', [$fechaInicio, $fechaFin])
             ->get()
-            ->groupBy(function($cita) {
+            ->groupBy(function ($cita) {
                 return $cita->fecha_hora->format('Y-m-d');
             });
 
@@ -395,7 +424,7 @@ class CitaController extends Controller
         while ($fecha->lte($fechaFin)) {
             $fechaStr = $fecha->format('Y-m-d');
             $diaSemana = $fecha->dayOfWeek;
-            
+
             // Saltar domingos y fechas completamente pasadas (no incluir el día de hoy)
             if ($diaSemana === Carbon::SUNDAY || $fecha->isYesterday() || $fecha->lt(Carbon::today())) {
                 $calendario[$fechaStr] = [
@@ -405,13 +434,13 @@ class CitaController extends Controller
                     'disponible' => false,
                     'motivo' => $diaSemana === Carbon::SUNDAY ? 'domingo' : 'fecha_pasada',
                     'horas_disponibles' => [],
-                    'horas_ocupadas' => []
+                    'horas_ocupadas' => [],
                 ];
             } else {
                 $horasDisponibles = Cita::horasDisponibles($fechaStr, $terapeutaId, $duracion);
                 $citasDelDia = $citasDelMes->get($fechaStr, collect());
-                
-                $horasOcupadas = $citasDelDia->map(function($cita) {
+
+                $horasOcupadas = $citasDelDia->map(function ($cita) {
                     return $cita->fecha_hora->format('H:i');
                 })->toArray();
 
@@ -419,12 +448,12 @@ class CitaController extends Controller
                     'fecha' => $fechaStr,
                     'dia' => $fecha->day,
                     'dia_semana' => $fecha->locale('es')->dayName,
-                    'disponible' => !empty($horasDisponibles),
+                    'disponible' => ! empty($horasDisponibles),
                     'motivo' => empty($horasDisponibles) ? 'sin_horarios' : 'disponible',
                     'horas_disponibles' => $horasDisponibles,
                     'horas_ocupadas' => $horasOcupadas,
                     'total_disponibles' => count($horasDisponibles),
-                    'total_ocupadas' => count($horasOcupadas)
+                    'total_ocupadas' => count($horasOcupadas),
                 ];
             }
 
@@ -438,16 +467,16 @@ class CitaController extends Controller
             'duracion' => $duracion,
             'calendario' => $calendario,
             'resumen' => [
-                'dias_disponibles' => count(array_filter($calendario, function($dia) {
+                'dias_disponibles' => count(array_filter($calendario, function ($dia) {
                     return $dia['disponible'];
                 })),
-                'dias_ocupados' => count(array_filter($calendario, function($dia) {
-                    return !$dia['disponible'] && $dia['motivo'] === 'sin_horarios';
+                'dias_ocupados' => count(array_filter($calendario, function ($dia) {
+                    return ! $dia['disponible'] && $dia['motivo'] === 'sin_horarios';
                 })),
-                'domingos' => count(array_filter($calendario, function($dia) {
+                'domingos' => count(array_filter($calendario, function ($dia) {
                     return $dia['motivo'] === 'domingo';
-                }))
-            ]
+                })),
+            ],
         ]);
     }
 }

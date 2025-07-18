@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Especialidad;
 use App\Http\Requests\StoreEspecialidadRequest;
 use App\Http\Requests\UpdateEspecialidadRequest;
-use Illuminate\Http\Request;
+use App\Models\Especialidad;
 
 class EspecialidadController extends BaseResourceController
 {

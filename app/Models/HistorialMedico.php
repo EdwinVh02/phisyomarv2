@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class HistorialMedico extends Model
 {
-    protected $table = 'historial_medico';
+    protected $table = 'historial_medicos';
 
     protected $fillable = ['PacienteId', 'Fecha_Creacion', 'Observacion_General'];
 

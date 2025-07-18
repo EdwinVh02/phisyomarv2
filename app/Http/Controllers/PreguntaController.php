@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pregunta;
 use App\Http\Requests\StorePreguntaRequest;
 use App\Http\Requests\UpdatePreguntaRequest;
+use App\Models\Pregunta;
 
 class PreguntaController extends BaseResourceController
 {

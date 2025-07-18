@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Registro;
 use App\Http\Requests\StoreRegistroRequest;
 use App\Http\Requests\UpdateRegistroRequest;
-use Illuminate\Http\Request;
+use App\Models\Registro;
 
 class RegistroController extends Controller
 {
@@ -22,6 +21,7 @@ class RegistroController extends Controller
     public function store(StoreRegistroRequest $request)
     {
         $data = $request->validated();
+
         return response()->json(Registro::create($data), 201);
     }
 
@@ -34,12 +34,14 @@ class RegistroController extends Controller
     {
         $data = $request->validated();
         $registro->update($data);
+
         return response()->json($registro, 200);
     }
 
     public function destroy(Registro $registro)
     {
         $registro->delete();
+
         return response()->json(['message' => 'Registro eliminado correctamente'], 200);
     }
 }

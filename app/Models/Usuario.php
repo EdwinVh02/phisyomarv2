@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable; // Si vas a usar Auth
+use App\Helpers\RoleHelper; // Si vas a usar Auth
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Helpers\RoleHelper;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Usuario extends Authenticatable
 {
-    use HasFactory, HasApiTokens, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'usuarios';
 
@@ -28,11 +27,11 @@ class Usuario extends Authenticatable
         'curp',
         'ocupacion',
         'estatus',
-        'rol_id'
+        'rol_id',
     ];
 
     protected $hidden = ['contraseña', 'remember_token'];
-    
+
     protected $rememberTokenName = 'remember_token';
 
     protected $casts = [
@@ -52,14 +51,17 @@ class Usuario extends Authenticatable
     {
         return $this->hasOne(Paciente::class, 'id');
     }
+
     public function terapeuta()
     {
         return $this->hasOne(Terapeuta::class, 'id');
     }
+
     public function recepcionista()
     {
         return $this->hasOne(Recepcionista::class, 'id');
     }
+
     public function administrador()
     {
         return $this->hasOne(Administrador::class, 'id');

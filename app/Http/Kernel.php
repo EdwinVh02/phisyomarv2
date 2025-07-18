@@ -3,14 +3,9 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use Fruitcake\Cors\HandleCors;
-use App\Http\Middleware\TrustProxies;
-use App\Http\Middleware\VerifyCsrfToken;
-use App\Http\Middleware\LoadConfiguration;
 
 class Kernel extends HttpKernel
 {
-
     /**
      * The application's global HTTP middleware stack.
      *
@@ -73,11 +68,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
-        'simplerole' => \App\Http\Middleware\SimpleRoleMiddleware::class,
-        'simpleauth' => \App\Http\Middleware\SimpleAuth::class,
-        'check.role' => \App\Http\Middleware\CheckUserRole::class,
-        'token.auth' => \App\Http\Middleware\TokenAuth::class,
-        'test' => \App\Http\Middleware\TestMiddleware::class,
 
     ];
 }

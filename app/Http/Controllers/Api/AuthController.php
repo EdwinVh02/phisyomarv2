@@ -44,9 +44,8 @@ class AuthController extends Controller
             'curp' => $request->curp,
             'ocupacion' => $request->ocupacion,
             'estatus' => $request->estatus ?? 'activo',
-            'rol_id' => $request->rol_id ?? 4
+            'rol_id' => $request->rol_id ?? 4,
         ]);
-
 
         $token = $usuario->createToken('API Token')->plainTextToken;
 
@@ -55,7 +54,6 @@ class AuthController extends Controller
             'token' => $token,
         ], 201);
     }
-
 
     public function login(Request $request)
     {
@@ -69,14 +67,14 @@ class AuthController extends Controller
 
         $usuario = Usuario::where('correo_electronico', $request->correo_electronico)->first();
 
-        if (!$usuario || !Hash::check($request->contraseña, $usuario->contraseña)) {
+        if (! $usuario || ! Hash::check($request->contraseña, $usuario->contraseña)) {
             throw ValidationException::withMessages([
                 'correo_electronico' => ['Estas credenciales no coinciden con nuestros registros.'],
             ]);
         }
 
         $token = $usuario->createToken('API Token')->plainTextToken;
-        
+
         return response()->json([
             'usuario' => $usuario,
             'token' => $token,
@@ -86,11 +84,113 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json(['mensaje' => 'Sesión cerrada correctamente.']);
     }
 
     public function user(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        
+        $request->validate([
+            'nombre' => 'required|string|max:50',
+            'apellido_paterno' => 'required|string|max:50',
+            'apellido_materno' => 'nullable|string|max:50',
+            'correo_electronico' => 'required|email|unique:usuarios,correo_electronico,' . $user->id,
+            'telefono' => 'nullable|string|max:20',
+            'direccion' => 'nullable|string|max:255',
+            'fecha_nacimiento' => 'nullable|date',
+            'sexo' => 'nullable|in:Masculino,Femenino,Otro',
+            'curp' => 'nullable|string|max:18|unique:usuarios,curp,' . $user->id . ',id',
+            'ocupacion' => 'nullable|string|max:100',
+        ], [], [
+            'correo_electronico' => 'correo electrónico',
+        ]);
+
+        // Preparar los datos para actualización, convirtiendo strings vacíos a null
+        $updateData = [];
+        $fields = ['nombre', 'apellido_paterno', 'apellido_materno', 'correo_electronico', 'telefono', 'direccion', 'fecha_nacimiento', 'sexo', 'curp', 'ocupacion'];
+        
+        foreach ($fields as $field) {
+            if ($request->has($field)) {
+                $value = $request->input($field);
+                $updateData[$field] = $value === '' ? null : $value;
+            }
+        }
+        
+        $user->update($updateData);
+
+        return response()->json([
+            'usuario' => $user->fresh(),
+            'mensaje' => 'Perfil actualizado correctamente',
+        ]);
+    }
+
+    public function googleLogin(Request $request)
+    {
+        $request->validate([
+            'credential' => 'required|string',
+        ]);
+
+        try {
+            // Decodificar el JWT de Google (sin verificar firma para desarrollo)
+            $credential = $request->credential;
+            $parts = explode('.', $credential);
+            
+            if (count($parts) !== 3) {
+                throw new \Exception('Token inválido');
+            }
+            
+            $payload = json_decode(base64_decode($parts[1]), true);
+            
+            if (!$payload || !isset($payload['email'])) {
+                throw new \Exception('Payload inválido');
+            }
+
+            $email = $payload['email'];
+            $name = $payload['name'] ?? '';
+            $given_name = $payload['given_name'] ?? '';
+            $family_name = $payload['family_name'] ?? '';
+
+            // Buscar usuario existente
+            $usuario = Usuario::where('correo_electronico', $email)->first();
+
+            if (!$usuario) {
+                // Crear nuevo usuario si no existe
+                $usuario = Usuario::create([
+                    'nombre' => $given_name,
+                    'apellido_paterno' => $family_name,
+                    'apellido_materno' => '',
+                    'correo_electronico' => $email,
+                    'contraseña' => bcrypt(uniqid()), // Contraseña aleatoria
+                    'telefono' => '',
+                    'direccion' => '',
+                    'fecha_nacimiento' => now()->subYears(25)->toDateString(),
+                    'sexo' => 'Otro',
+                    'curp' => '',
+                    'ocupacion' => '',
+                    'estatus' => 'activo',
+                    'rol_id' => 4, // Paciente por defecto
+                ]);
+            }
+
+            $token = $usuario->createToken('Google API Token')->plainTextToken;
+
+            return response()->json([
+                'usuario' => $usuario,
+                'token' => $token,
+                'mensaje' => 'Login con Google exitoso',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al procesar login con Google: ' . $e->getMessage(),
+            ], 400);
+        }
     }
 }

@@ -19,22 +19,22 @@ class SimpleAuthController extends Controller
 
         $usuario = Usuario::where('correo_electronico', $request->correo_electronico)->first();
 
-        if (!$usuario || !Hash::check($request->contraseña, $usuario->contraseña)) {
+        if (! $usuario || ! Hash::check($request->contraseña, $usuario->contraseña)) {
             return response()->json([
-                'error' => 'Credenciales incorrectas'
+                'error' => 'Credenciales incorrectas',
             ], 401);
         }
 
         // Crear token simple
-        $token = base64_encode($usuario->id . '|' . Str::random(60) . '|' . time());
-        
+        $token = base64_encode($usuario->id.'|'.Str::random(60).'|'.time());
+
         // Guardar token en base de datos (opcional, para invalidar tokens)
         $usuario->update(['remember_token' => $token]);
 
         return response()->json([
             'usuario' => $usuario,
             'token' => $token,
-            'message' => 'Login exitoso'
+            'message' => 'Login exitoso',
         ]);
     }
 
@@ -42,7 +42,7 @@ class SimpleAuthController extends Controller
     {
         // Obtener usuario desde token
         $user = $this->getUserFromToken($request);
-        
+
         if ($user) {
             $user->update(['remember_token' => null]);
         }
@@ -53,8 +53,8 @@ class SimpleAuthController extends Controller
     public function user(Request $request)
     {
         $user = $this->getUserFromToken($request);
-        
-        if (!$user) {
+
+        if (! $user) {
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
@@ -67,31 +67,31 @@ class SimpleAuthController extends Controller
     private function getUserFromToken(Request $request)
     {
         $authHeader = $request->header('Authorization');
-        
-        if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
+
+        if (! $authHeader || ! str_starts_with($authHeader, 'Bearer ')) {
             return null;
         }
 
         $token = substr($authHeader, 7);
-        
+
         try {
             $decoded = base64_decode($token);
             $parts = explode('|', $decoded);
-            
+
             if (count($parts) !== 3) {
                 return null;
             }
 
             $userId = $parts[0];
             $user = Usuario::find($userId);
-            
+
             // Verificar que el token coincida (opcional)
             if ($user && $user->remember_token === $token) {
                 return $user;
             }
-            
+
             return $user; // Para simplificar, no verificamos el token exacto
-            
+
         } catch (\Exception $e) {
             return null;
         }

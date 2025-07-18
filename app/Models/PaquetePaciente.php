@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaquetePaciente extends Model
 {
-    protected $table = 'paquetepaciente';
+    protected $table = 'paquete_pacientes';
 
     protected $fillable = [
         'PacienteId',
         'PaqueteSesionId',
         'Fecha_Compra',
-        'Sesiones_Usadas'
+        'Sesiones_Usadas',
     ];
 
     public function paciente()

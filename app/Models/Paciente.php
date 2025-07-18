@@ -10,7 +10,9 @@ class Paciente extends Model
     use HasFactory;
 
     protected $table = 'pacientes';
+
     protected $primaryKey = 'id';
+
     public $timestamps = true;
 
     protected $fillable = [
@@ -22,7 +24,7 @@ class Paciente extends Model
         'tutor_telefono',
         'tutor_parentesco',
         'tutor_direccion',
-        'historial_medico_id'
+        'historial_medico_id',
     ];
 
     public function usuario()

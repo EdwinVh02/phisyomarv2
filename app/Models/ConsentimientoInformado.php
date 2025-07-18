@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class ConsentimientoInformado extends Model
 {
-    protected $table = 'consentimiento_informado';
+    protected $table = 'consentimiento_informados';
 
     protected $fillable = [
         'PacienteId',
         'Fecha_Firma',
         'Tipo',
         'Documento_URL',
-        'Firmado_Por'
+        'Firmado_Por',
     ];
 
     public function paciente()

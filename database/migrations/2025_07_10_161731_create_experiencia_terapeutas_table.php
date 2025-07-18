@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('experiencia_terapeutas', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('terapeuta_id');
-            $table->enum('tipo', ['exito','fallo','otro']);
+            $table->enum('tipo', ['exito', 'fallo', 'otro']);
             $table->text('descripcion')->nullable();
             $table->date('fecha')->nullable();
             $table->timestamp('fecha_creacion')->useCurrent();

@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Encuesta extends Model
 {
-    protected $table = 'encuesta';
+    protected $table = 'encuestas';
 
     protected $fillable = [
         'Titulo',
         'RecepcionistaId',
-        'Tipo'
+        'Tipo',
     ];
 
     public function preguntas()

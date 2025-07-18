@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Usuario;
+use Illuminate\Http\Request;
 
 /**
  * Controlador base que maneja autorización de roles
@@ -16,26 +16,26 @@ class AuthorizedController extends Controller
     protected function authenticateUser(Request $request)
     {
         $authHeader = $request->header('Authorization');
-        
-        if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
+
+        if (! $authHeader || ! str_starts_with($authHeader, 'Bearer ')) {
             return null;
         }
 
         $token = substr($authHeader, 7);
-        
+
         try {
             $decoded = base64_decode($token);
             $parts = explode('|', $decoded);
-            
+
             if (count($parts) !== 3) {
                 return null;
             }
 
             $userId = $parts[0];
             $user = Usuario::find($userId);
-            
+
             return $user;
-            
+
         } catch (\Exception $e) {
             return null;
         }
@@ -47,17 +47,17 @@ class AuthorizedController extends Controller
     protected function checkRoleAccess(Request $request, array $allowedRoles)
     {
         $user = $request->user();
-        
-        if (!$user) {
+
+        if (! $user) {
             return response()->json(['error' => 'No autenticado'], 401);
         }
 
-        if (!in_array($user->rol_id, $allowedRoles)) {
+        if (! in_array($user->rol_id, $allowedRoles)) {
             return response()->json([
                 'error' => 'Acceso denegado',
                 'required_roles' => $allowedRoles,
                 'user_role' => $user->rol_id,
-                'message' => 'No tienes permisos para realizar esta acción'
+                'message' => 'No tienes permisos para realizar esta acción',
             ], 403);
         }
 

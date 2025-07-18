@@ -1,19 +1,23 @@
 <?php
+
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\CitaDisponible;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCitaRequest extends FormRequest
 {
-    public function authorize() { return true; }
+    public function authorize()
+    {
+        return true;
+    }
 
     public function rules()
     {
         $citaId = $this->route('cita') ? $this->route('cita')->id : null;
-        
+
         return [
-            'fecha_hora'    => [
+            'fecha_hora' => [
                 'sometimes',
                 'date',
                 'after:now',
@@ -21,16 +25,16 @@ class UpdateCitaRequest extends FormRequest
                     $this->input('terapeuta_id') ?? $this->route('cita')->terapeuta_id,
                     $this->input('duracion', 60),
                     $citaId
-                )
+                ),
             ],
-            'paciente_id'   => 'sometimes|exists:pacientes,id',
-            'terapeuta_id'  => 'sometimes|exists:terapeutas,id',
-            'estado'        => 'nullable|in:agendada,atendida,cancelada,no_asistio,reprogramada',
-            'tipo'          => 'sometimes|string|max:50',
-            'duracion'      => 'nullable|integer|min:15|max:240',
-            'ubicacion'     => 'nullable|string|max:100',
+            'paciente_id' => 'sometimes|exists:pacientes,id',
+            'terapeuta_id' => 'sometimes|exists:terapeutas,id',
+            'estado' => 'nullable|in:agendada,atendida,cancelada,no_asistio,reprogramada',
+            'tipo' => 'sometimes|string|max:50',
+            'duracion' => 'nullable|integer|min:15|max:240',
+            'ubicacion' => 'nullable|string|max:100',
             'equipo_asignado' => 'nullable|string|max:100',
-            'motivo'        => 'sometimes|string',
+            'motivo' => 'sometimes|string',
             'observaciones' => 'nullable|string',
             'escala_dolor_eva_inicio' => 'nullable|integer|min:0|max:10',
             'escala_dolor_eva_fin' => 'nullable|integer|min:0|max:10',

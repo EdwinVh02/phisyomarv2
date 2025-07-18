@@ -10,12 +10,13 @@ class StoreBitacoraRequest extends FormRequest
     {
         return true;
     }
+
     public function rules()
     {
         return [
             'usuario_id' => 'required|exists:usuarios,id',
-            'accion'     => 'required|string|max:255',
-            'tabla'      => 'required|string|max:50',
+            'accion' => 'required|string|max:255',
+            'tabla' => 'required|string|max:50',
         ];
     }
 }

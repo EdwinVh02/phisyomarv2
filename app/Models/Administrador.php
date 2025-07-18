@@ -10,7 +10,9 @@ class Administrador extends Model
     use HasFactory;
 
     protected $table = 'administradores';
+
     protected $primaryKey = 'id';
+
     public $timestamps = false;
 
     protected $fillable = ['id', 'cedula_profesional', 'clinica_id'];

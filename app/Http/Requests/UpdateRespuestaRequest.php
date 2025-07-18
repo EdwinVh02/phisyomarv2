@@ -1,19 +1,23 @@
 <?php
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRespuestaRequest extends FormRequest
 {
-    public function authorize() { return true; }
+    public function authorize()
+    {
+        return true;
+    }
 
     public function rules()
     {
         return [
             'pregunta_id' => 'sometimes|exists:preguntas,id',
             'paciente_id' => 'nullable|exists:pacientes,id',
-            'texto'       => 'sometimes|string',
-            'valor'       => 'nullable|integer',
+            'texto' => 'sometimes|string',
+            'valor' => 'nullable|integer',
         ];
     }
 

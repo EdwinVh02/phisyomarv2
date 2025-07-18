@@ -18,16 +18,16 @@ class ClinicaFactory extends Factory
     {
         $nombres = [
             'PhisyoMar - Clínica Principal',
-            'Centro de Rehabilitación Integral', 
+            'Centro de Rehabilitación Integral',
             'Clínica de Fisioterapia Avanzada',
             'Instituto de Terapia Física',
-            'Centro Médico de Rehabilitación'
+            'Centro Médico de Rehabilitación',
         ];
 
         return [
             'nombre' => $this->faker->randomElement($nombres),
             'direccion' => $this->faker->address(),
-            'telefono' => '55' . $this->faker->numerify('########'),
+            'telefono' => '55'.$this->faker->numerify('########'),
             'email' => $this->faker->companyEmail(),
             'horario_atencion' => 'Lunes a Viernes 8:00 - 20:00, Sábados 9:00 - 14:00',
         ];

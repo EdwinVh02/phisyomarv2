@@ -4,7 +4,11 @@
       "Bash(php artisan config:clear:*)",
       "Bash(php artisan:*)",
       "Bash(composer:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(./vendor/bin/pint)"
     ],
     "deny": []
   }

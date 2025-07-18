@@ -20,12 +20,12 @@ class TerapeutaFactory extends Factory
             'cedula_profesional' => $this->faker->unique()->numerify('########'),
             'especialidad_principal' => $this->faker->randomElement([
                 'Fisioterapia Deportiva',
-                'Fisioterapia Neurológica', 
+                'Fisioterapia Neurológica',
                 'Fisioterapia Ortopédica',
                 'Fisioterapia Respiratoria',
                 'Fisioterapia Pediátrica',
                 'Fisioterapia Geriátrica',
-                'Rehabilitación Cardíaca'
+                'Rehabilitación Cardíaca',
             ]),
             'experiencia_anios' => $this->faker->numberBetween(1, 25),
             'estatus' => 'activo',

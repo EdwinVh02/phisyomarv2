@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pago extends Model
 {
-    protected $table = 'pago';
+    protected $table = 'pagos';
 
     protected $fillable = [
         'Fecha_Hora',
@@ -16,7 +16,7 @@ class Pago extends Model
         'CitaId',
         'PaquetePacienteId',
         'Autorizacion',
-        'Factura_Emitida'
+        'Factura_Emitida',
     ];
 
     public function cita()

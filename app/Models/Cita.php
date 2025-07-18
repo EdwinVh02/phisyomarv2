@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class Cita extends Model
 {
@@ -26,7 +26,7 @@ class Cita extends Model
         'escala_dolor_eva_fin',
         'como_fue_lesion',
         'antecedentes_patologicos',
-        'antecedentes_no_patologicos'
+        'antecedentes_no_patologicos',
     ];
 
     protected $casts = [
@@ -66,13 +66,13 @@ class Cita extends Model
 
         $query = static::where('terapeuta_id', $terapeutaId)
             ->where('estado', '!=', 'cancelada')
-            ->where(function($query) use ($fechaInicio, $fechaFin) {
-                $query->where(function($q) use ($fechaInicio, $fechaFin) {
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where(function ($q) use ($fechaInicio) {
                     $q->where('fecha_hora', '<=', $fechaInicio)
-                      ->whereRaw('DATE_ADD(fecha_hora, INTERVAL COALESCE(duracion, 60) MINUTE) > ?', [$fechaInicio]);
-                })->orWhere(function($q) use ($fechaInicio, $fechaFin) {
+                        ->whereRaw('DATE_ADD(fecha_hora, INTERVAL COALESCE(duracion, 60) MINUTE) > ?', [$fechaInicio]);
+                })->orWhere(function ($q) use ($fechaInicio, $fechaFin) {
                     $q->where('fecha_hora', '>=', $fechaInicio)
-                      ->where('fecha_hora', '<', $fechaFin);
+                        ->where('fecha_hora', '<', $fechaFin);
                 });
             });
 
@@ -80,7 +80,7 @@ class Cita extends Model
             $query->where('id', '!=', $citaId);
         }
 
-        return !$query->exists();
+        return ! $query->exists();
     }
 
     /**
@@ -89,38 +89,38 @@ class Cita extends Model
     public static function horasDisponibles($fecha, $terapeutaId, $duracion = 60)
     {
         $fecha = Carbon::parse($fecha);
-        
+
         // Horario laboral: 8:00 AM - 6:00 PM
         $horaInicio = 8;
         $horaFin = 18;
-        
+
         // Si es domingo, no hay horarios disponibles
         if ($fecha->dayOfWeek === Carbon::SUNDAY) {
             return [];
         }
 
         $horasDisponibles = [];
-        
+
         // Para citas de 1 hora, generar horarios cada hora exacta
         for ($hora = $horaInicio; $hora < $horaFin; $hora++) {
             $fechaHora = $fecha->copy()->hour($hora)->minute(0)->second(0);
-            
+
             // Verificar que la cita no se extienda más allá del horario laboral
             if ($fechaHora->copy()->addMinutes($duracion)->hour > $horaFin) {
                 continue;
             }
-            
+
             // Verificar que no sea en el pasado
             if ($fechaHora->isPast()) {
                 continue;
             }
-            
+
             // Verificar disponibilidad
             if (static::estaDisponible($fechaHora, $terapeutaId, $duracion)) {
                 $horasDisponibles[] = $fechaHora->format('H:i');
             }
         }
-        
+
         return $horasDisponibles;
     }
 
@@ -132,26 +132,26 @@ class Cita extends Model
         $fechaInicio = Carbon::parse($fechaInicio);
         $fechaFin = Carbon::parse($fechaFin);
         $fechasDisponibles = [];
-        
+
         $fecha = $fechaInicio->copy();
-        
+
         while ($fecha->lte($fechaFin)) {
             // Saltar domingos
             if ($fecha->dayOfWeek !== Carbon::SUNDAY) {
                 $horasDisponibles = static::horasDisponibles($fecha, $terapeutaId, $duracion);
-                
-                if (!empty($horasDisponibles)) {
+
+                if (! empty($horasDisponibles)) {
                     $fechasDisponibles[] = [
                         'fecha' => $fecha->format('Y-m-d'),
                         'dia_semana' => $fecha->locale('es')->dayName,
-                        'horas_disponibles' => $horasDisponibles
+                        'horas_disponibles' => $horasDisponibles,
                     ];
                 }
             }
-            
+
             $fecha->addDay();
         }
-        
+
         return $fechasDisponibles;
     }
 
@@ -162,25 +162,25 @@ class Cita extends Model
     {
         $fechaInicio = Carbon::now()->addDay(); // Comenzar desde mañana
         $fechaFin = $fechaInicio->copy()->addDays(30); // Buscar en los próximos 30 días
-        
+
         $fecha = $fechaInicio->copy();
-        
+
         while ($fecha->lte($fechaFin)) {
             if ($fecha->dayOfWeek !== Carbon::SUNDAY) {
                 $horasDisponibles = static::horasDisponibles($fecha, $terapeutaId, $duracion);
-                
-                if (!empty($horasDisponibles)) {
+
+                if (! empty($horasDisponibles)) {
                     return [
                         'fecha' => $fecha->format('Y-m-d'),
                         'hora' => $horasDisponibles[0],
-                        'fecha_hora' => $fecha->format('Y-m-d') . ' ' . $horasDisponibles[0] . ':00'
+                        'fecha_hora' => $fecha->format('Y-m-d').' '.$horasDisponibles[0].':00',
                     ];
                 }
             }
-            
+
             $fecha->addDay();
         }
-        
+
         return null;
     }
 }

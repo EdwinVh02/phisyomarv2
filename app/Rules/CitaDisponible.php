@@ -2,16 +2,19 @@
 
 namespace App\Rules;
 
-use Illuminate\Contracts\Validation\Rule;
 use App\Models\Cita;
 use App\Models\Terapeuta;
 use Carbon\Carbon;
+use Illuminate\Contracts\Validation\Rule;
 
 class CitaDisponible implements Rule
 {
     private $terapeutaId;
+
     private $duracion;
+
     private $citaId;
+
     private $mensaje;
 
     public function __construct($terapeutaId, $duracion = 60, $citaId = null)
@@ -27,12 +30,14 @@ class CitaDisponible implements Rule
             $fechaHora = Carbon::parse($value);
         } catch (\Exception $e) {
             $this->mensaje = 'La fecha y hora proporcionada no es válida.';
+
             return false;
         }
 
         // Validar que la fecha no sea en el pasado
         if ($fechaHora->isPast()) {
             $this->mensaje = 'No se pueden agendar citas en fechas pasadas.';
+
             return false;
         }
 
@@ -40,18 +45,21 @@ class CitaDisponible implements Rule
         $hora = $fechaHora->hour;
         if ($hora < 8 || $hora >= 18) {
             $this->mensaje = 'Las citas solo se pueden agendar entre las 8:00 AM y 6:00 PM.';
+
             return false;
         }
 
         // Validar que no sea domingo
         if ($fechaHora->dayOfWeek === Carbon::SUNDAY) {
             $this->mensaje = 'No se pueden agendar citas los domingos.';
+
             return false;
         }
 
         // Validar que el terapeuta exista
-        if (!Terapeuta::find($this->terapeutaId)) {
+        if (! Terapeuta::find($this->terapeutaId)) {
             $this->mensaje = 'El terapeuta seleccionado no existe.';
+
             return false;
         }
 
@@ -61,15 +69,15 @@ class CitaDisponible implements Rule
 
         $citasConflicto = Cita::where('terapeuta_id', $this->terapeutaId)
             ->where('estado', '!=', 'cancelada')
-            ->where(function($query) use ($fechaInicio, $fechaFin) {
-                $query->where(function($q) use ($fechaInicio, $fechaFin) {
+            ->where(function ($query) use ($fechaInicio, $fechaFin) {
+                $query->where(function ($q) use ($fechaInicio) {
                     // Cita existente que inicia antes y termina después del inicio de la nueva cita
                     $q->where('fecha_hora', '<=', $fechaInicio)
-                      ->whereRaw('DATE_ADD(fecha_hora, INTERVAL COALESCE(duracion, 60) MINUTE) > ?', [$fechaInicio]);
-                })->orWhere(function($q) use ($fechaInicio, $fechaFin) {
+                        ->whereRaw('DATE_ADD(fecha_hora, INTERVAL COALESCE(duracion, 60) MINUTE) > ?', [$fechaInicio]);
+                })->orWhere(function ($q) use ($fechaInicio, $fechaFin) {
                     // Cita existente que inicia durante la nueva cita
                     $q->where('fecha_hora', '>=', $fechaInicio)
-                      ->where('fecha_hora', '<', $fechaFin);
+                        ->where('fecha_hora', '<', $fechaFin);
                 });
             });
 
@@ -81,20 +89,21 @@ class CitaDisponible implements Rule
         if ($citasConflicto->exists()) {
             $citaExistente = $citasConflicto->first();
             $horaExistente = $citaExistente->fecha_hora->format('H:i');
-            
+
             // Obtener horas disponibles para ese día
             $fecha = $fechaHora->format('Y-m-d');
             $horasDisponibles = Cita::horasDisponibles($fecha, $this->terapeutaId, $this->duracion);
-            
+
             if (empty($horasDisponibles)) {
-                $this->mensaje = "El terapeuta ya tiene una cita a las {$horaExistente} y no hay más horarios disponibles para el " . $fechaHora->format('d/m/Y') . ". Por favor, selecciona otra fecha.";
+                $this->mensaje = "El terapeuta ya tiene una cita a las {$horaExistente} y no hay más horarios disponibles para el ".$fechaHora->format('d/m/Y').'. Por favor, selecciona otra fecha.';
             } else {
                 $horasTexto = implode(', ', array_slice($horasDisponibles, 0, 5));
                 if (count($horasDisponibles) > 5) {
-                    $horasTexto .= ' y ' . (count($horasDisponibles) - 5) . ' más';
+                    $horasTexto .= ' y '.(count($horasDisponibles) - 5).' más';
                 }
-                $this->mensaje = "El terapeuta ya tiene una cita a las {$horaExistente}. Horas disponibles para el " . $fechaHora->format('d/m/Y') . ": {$horasTexto}";
+                $this->mensaje = "El terapeuta ya tiene una cita a las {$horaExistente}. Horas disponibles para el ".$fechaHora->format('d/m/Y').": {$horasTexto}";
             }
+
             return false;
         }
 
@@ -109,6 +118,7 @@ class CitaDisponible implements Rule
 
         if ($citasDelDia->count() >= 8) {
             $this->mensaje = 'El terapeuta ya tiene el máximo de citas permitidas para este día.';
+
             return false;
         }
 

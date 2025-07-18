@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tratamiento extends Model
 {
-    protected $table = 'tratamiento';
+    protected $table = 'tratamientos';
 
     protected $fillable = [
         'Titulo',
@@ -15,7 +15,7 @@ class Tratamiento extends Model
         'Frecuencia',
         'Requisitos',
         'PadecimientoId',
-        'TarifaId'
+        'TarifaId',
     ];
 
     public function padecimiento()

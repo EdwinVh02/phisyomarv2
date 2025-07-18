@@ -6,22 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tarjeta extends Model
 {
-    protected $table = 'tarjeta';
+    protected $table = 'tarjetas';
 
     protected $fillable = [
         'Titular',
         'Banco',
         'Fecha_Vencimiento',
-        'PagoId'
+        'PagoId',
     ];
 
     protected $hidden = [
         'Numero',
-        'CVV'
+        'CVV',
     ];
 
     protected $casts = [
-        'Fecha_Vencimiento' => 'date'
+        'Fecha_Vencimiento' => 'date',
     ];
 
     public function pago()

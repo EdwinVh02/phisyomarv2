@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('titulo', 100);
             $table->unsignedBigInteger('recepcionista_id')->nullable();
-            $table->enum('tipo', ['satisfaccion','dolor','otro']);
+            $table->enum('tipo', ['satisfaccion', 'dolor', 'otro']);
             $table->timestamp('fecha_creacion')->useCurrent();
             $table->foreign('recepcionista_id')->references('id')->on('recepcionistas');
         });

@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Smartwatch extends Model
 {
-    protected $table = 'smartwatch';
+    protected $table = 'smartwatches';
 
     protected $fillable = [
         'ValoracionId',
         'PacienteId',
-        'Datos'
+        'Datos',
     ];
 
     public function valoracion()

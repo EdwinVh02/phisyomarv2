@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaqueteSesion extends Model
 {
-    protected $table = 'paquetesesion';
+    protected $table = 'paquete_sesions';
 
     protected $fillable = [
         'Nombre',
         'Numero_Sesiones',
         'Precio',
         'Tipo_Terapia',
-        'Especifico_Enfermedad'
+        'Especifico_Enfermedad',
     ];
 
     public function paquetesPaciente()

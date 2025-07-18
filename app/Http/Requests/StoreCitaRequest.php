@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\CitaDisponible;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCitaRequest extends FormRequest
 {
@@ -11,27 +11,27 @@ class StoreCitaRequest extends FormRequest
     {
         return true;
     }
-    
+
     public function rules()
     {
         return [
-            'fecha_hora'    => [
+            'fecha_hora' => [
                 'required',
                 'date',
                 'after:now',
                 new CitaDisponible(
                     $this->input('terapeuta_id'),
                     $this->input('duracion', 60)
-                )
+                ),
             ],
-            'paciente_id'   => 'required|exists:pacientes,id',
-            'terapeuta_id'  => 'required|exists:terapeutas,id',
-            'estado'        => 'nullable|in:agendada,atendida,cancelada,no_asistio,reprogramada',
-            'tipo'          => 'required|string|max:50',
-            'duracion'      => 'nullable|integer|min:15|max:240',
-            'ubicacion'     => 'nullable|string|max:100',
+            'paciente_id' => 'required|exists:pacientes,id',
+            'terapeuta_id' => 'required|exists:terapeutas,id',
+            'estado' => 'nullable|in:agendada,atendida,cancelada,no_asistio,reprogramada',
+            'tipo' => 'required|string|max:50',
+            'duracion' => 'nullable|integer|min:15|max:240',
+            'ubicacion' => 'nullable|string|max:100',
             'equipo_asignado' => 'nullable|string|max:100',
-            'motivo'        => 'required|string',
+            'motivo' => 'required|string',
             'observaciones' => 'nullable|string',
             'escala_dolor_eva_inicio' => 'nullable|integer|min:0|max:10',
             'escala_dolor_eva_fin' => 'nullable|integer|min:0|max:10',

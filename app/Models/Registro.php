@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Registro extends Model
 {
-    protected $table = 'registro';
+    protected $table = 'registros';
 
     protected $fillable = [
         'Historial_Medico_Id',
@@ -26,7 +26,7 @@ class Registro extends Model
         'Sensibilidad',
         'Reflejos_Osteotendinosos',
         'Motivo_Visita',
-        'Numero_Sesion'
+        'Numero_Sesion',
     ];
 
     public function historial()

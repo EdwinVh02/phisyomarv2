@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Cita;
 use App\Models\Usuario;
-use Illuminate\Auth\Access\Response;
 
 class CitaPolicy
 {
@@ -14,7 +13,7 @@ class CitaPolicy
     public function viewAny(Usuario $user): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden ver todas las citas
         return in_array($roleId, [1, 3]);
     }
@@ -25,22 +24,22 @@ class CitaPolicy
     public function view(Usuario $user, Cita $cita): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden ver cualquier cita
         if (in_array($roleId, [1, 3])) {
             return true;
         }
-        
+
         // Terapeuta (2) puede ver solo sus propias citas
         if ($roleId === 2) {
             return $cita->terapeuta_id === $user->terapeuta->id ?? null;
         }
-        
+
         // Paciente (4) puede ver solo sus propias citas
         if ($roleId === 4) {
             return $cita->paciente_id === $user->paciente->id ?? null;
         }
-        
+
         return false;
     }
 
@@ -50,7 +49,7 @@ class CitaPolicy
     public function create(Usuario $user): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1), Recepcionista (3) y Paciente (4) pueden crear citas
         return in_array($roleId, [1, 3, 4]);
     }
@@ -61,23 +60,23 @@ class CitaPolicy
     public function update(Usuario $user, Cita $cita): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden modificar cualquier cita
         if (in_array($roleId, [1, 3])) {
             return true;
         }
-        
+
         // Terapeuta (2) puede modificar sus propias citas (datos clínicos)
         if ($roleId === 2) {
             return $cita->terapeuta_id === $user->terapeuta->id ?? null;
         }
-        
+
         // Paciente (4) puede modificar sus propias citas (solo si no han empezado)
         if ($roleId === 4) {
-            return $cita->paciente_id === $user->paciente->id ?? null && 
+            return $cita->paciente_id === $user->paciente->id ?? null &&
                    $cita->estado !== 'Realizada';
         }
-        
+
         return false;
     }
 
@@ -87,18 +86,18 @@ class CitaPolicy
     public function delete(Usuario $user, Cita $cita): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden eliminar citas
         if (in_array($roleId, [1, 3])) {
             return true;
         }
-        
+
         // Paciente (4) puede cancelar sus propias citas
         if ($roleId === 4) {
-            return $cita->paciente_id === $user->paciente->id ?? null && 
+            return $cita->paciente_id === $user->paciente->id ?? null &&
                    $cita->estado !== 'Realizada';
         }
-        
+
         return false;
     }
 

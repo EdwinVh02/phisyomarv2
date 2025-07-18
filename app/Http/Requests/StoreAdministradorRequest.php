@@ -10,11 +10,12 @@ class StoreAdministradorRequest extends FormRequest
     {
         return true;
     }
+
     public function rules()
     {
         return [
             'usuario_id' => 'required|exists:usuarios,id',
-            'area'       => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
         ];
     }
 }

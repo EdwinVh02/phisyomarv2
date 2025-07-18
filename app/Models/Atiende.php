@@ -5,13 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class Atiende extends Pivot
-
 {
     protected $table = 'atiendes';
 
     protected $fillable = [
         'terapeuta_id',
-        'cita_id'
+        'cita_id',
     ];
 
     public function terapeuta()

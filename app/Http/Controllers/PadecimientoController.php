@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Padecimiento;
 use App\Http\Requests\StorePadecimientoRequest;
 use App\Http\Requests\UpdatePadecimientoRequest;
+use App\Models\Padecimiento;
 
 class PadecimientoController extends BaseResourceController
 {

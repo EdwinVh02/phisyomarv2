@@ -2,14 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\Usuario;
 use App\Models\Administrador;
-use App\Models\Terapeuta;
-use App\Models\Recepcionista;
-use App\Models\Paciente;
 use App\Models\Clinica;
+use App\Models\Paciente;
+use App\Models\Recepcionista;
+use App\Models\Terapeuta;
+use App\Models\Usuario;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class UsuariosPorRolSeeder extends Seeder
@@ -19,7 +18,7 @@ class UsuariosPorRolSeeder extends Seeder
      */
     public function run(): void
     {
-        //Limpiar la tabla de administradores
+        // Limpiar la tabla de administradores
         $this->command->info('🌱 Limpiando la tabla de administradores...');
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
@@ -33,14 +32,14 @@ class UsuariosPorRolSeeder extends Seeder
         DB::table('usuarios')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        //Limpiar la tabla de terapeutas
+        // Limpiar la tabla de terapeutas
         $this->command->info('🌱 Limpiando la tabla de terapeutas...');
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('terapeutas')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        //Limpiar la tabla de recepcionistas
+        // Limpiar la tabla de recepcionistas
         $this->command->info('🌱 Limpiando la tabla de recepcionistas...');
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
@@ -49,20 +48,19 @@ class UsuariosPorRolSeeder extends Seeder
 
         $this->command->info('🌱 Creando usuarios por rol...');
 
-
         // Crear clínica básica si no existe
         $clinica = Clinica::firstOrCreate(
             ['id' => 1],
             [
-                'nombre'           => 'PhisyoMar - Clínica Principal',
-                'direccion'        => 'Av. Reforma 123, Col. Centro, CDMX',
-                'razon_social'     => 'PhisyoMar S.A. de C.V.',
-                'rfc'              => 'RFC123456ABC',
+                'nombre' => 'PhisyoMar - Clínica Principal',
+                'direccion' => 'Av. Reforma 123, Col. Centro, CDMX',
+                'razon_social' => 'PhisyoMar S.A. de C.V.',
+                'rfc' => 'RFC123456ABC',
                 'no_licencia_sanitaria' => 'LIC123456',
-                'no_registro_patronal'  => 'REG987654',
+                'no_registro_patronal' => 'REG987654',
                 'no_aviso_de_funcionamiento' => 'AVF456789',
-                'colores_corporativos'  => '#00BFFF',
-                'logo_url'              => 'http://logo.com/logo.png',
+                'colores_corporativos' => '#00BFFF',
+                'logo_url' => 'http://logo.com/logo.png',
             ]
         );
 
@@ -110,7 +108,7 @@ class UsuariosPorRolSeeder extends Seeder
         ]);
 
         $recepcionista = Recepcionista::factory()->create([
-            'id' => $recepcionistaUsuario->id
+            'id' => $recepcionistaUsuario->id,
         ]);
 
         $this->command->info("✅ Recepcionista creada: {$recepcionistaUsuario->correo_electronico}");
@@ -140,8 +138,8 @@ class UsuariosPorRolSeeder extends Seeder
         $this->command->info('');
         $this->command->info('📋 CREDENCIALES DE ACCESO:');
         $this->command->info('  👑 Administrador: admin@phisyomar.com | Password123!');
-        $this->command->info('  🩺 Terapeuta: ' . $terapeutaUsuario->correo_electronico . ' | Password123!');
-        $this->command->info('  📋 Recepcionista: ' . $recepcionistaUsuario->correo_electronico . ' | Password123!');
+        $this->command->info('  🩺 Terapeuta: '.$terapeutaUsuario->correo_electronico.' | Password123!');
+        $this->command->info('  📋 Recepcionista: '.$recepcionistaUsuario->correo_electronico.' | Password123!');
         $this->command->info('  🏥 Paciente: paciente@gmail.com | Password123!');
         $this->command->info('');
         $this->command->info('🔐 ROLES ASIGNADOS:');

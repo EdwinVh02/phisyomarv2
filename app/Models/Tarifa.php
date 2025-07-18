@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tarifa extends Model
 {
-    protected $table = 'tarifa';
+    protected $table = 'tarifas';
 
     protected $fillable = [
         'Titulo',
         'Precio',
         'Tipo',
-        'Condiciones'
+        'Condiciones',
     ];
 
     public function tratamientos()

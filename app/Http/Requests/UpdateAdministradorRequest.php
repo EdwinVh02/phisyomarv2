@@ -15,7 +15,7 @@ class UpdateAdministradorRequest extends FormRequest
     {
         return [
             'usuario_id' => 'sometimes|exists:usuarios,id',
-            'area'       => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
         ];
     }
 
@@ -23,7 +23,7 @@ class UpdateAdministradorRequest extends FormRequest
     {
         return [
             'usuario_id.exists' => 'El usuario seleccionado no existe.',
-            'area.max'          => 'El área no debe exceder 100 caracteres.',
+            'area.max' => 'El área no debe exceder 100 caracteres.',
         ];
     }
 }

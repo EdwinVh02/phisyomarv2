@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Paciente;
 use App\Models\Usuario;
-use Illuminate\Auth\Access\Response;
 
 class PacientePolicy
 {
@@ -14,7 +13,7 @@ class PacientePolicy
     public function viewAny(Usuario $user): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden ver todos los pacientes
         return in_array($roleId, [1, 3]);
     }
@@ -25,24 +24,24 @@ class PacientePolicy
     public function view(Usuario $user, Paciente $paciente): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden ver cualquier paciente
         if (in_array($roleId, [1, 3])) {
             return true;
         }
-        
+
         // Terapeuta (2) puede ver pacientes asignados a él (através de citas)
         if ($roleId === 2) {
-            return $paciente->citas()->whereHas('terapeuta', function($query) use ($user) {
+            return $paciente->citas()->whereHas('terapeuta', function ($query) use ($user) {
                 $query->where('id', $user->id);
             })->exists();
         }
-        
+
         // Paciente (4) solo puede ver su propia información
         if ($roleId === 4) {
             return $paciente->id === $user->id;
         }
-        
+
         return false;
     }
 
@@ -52,7 +51,7 @@ class PacientePolicy
     public function create(Usuario $user): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden crear pacientes
         return in_array($roleId, [1, 3]);
     }
@@ -63,17 +62,17 @@ class PacientePolicy
     public function update(Usuario $user, Paciente $paciente): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Administrador (1) y Recepcionista (3) pueden modificar cualquier paciente
         if (in_array($roleId, [1, 3])) {
             return true;
         }
-        
+
         // Paciente (4) solo puede modificar su propia información
         if ($roleId === 4) {
             return $paciente->id === $user->id;
         }
-        
+
         return false;
     }
 
@@ -83,7 +82,7 @@ class PacientePolicy
     public function delete(Usuario $user, Paciente $paciente): bool
     {
         $roleId = $user->rol->id ?? null;
-        
+
         // Solo Administrador (1) puede eliminar pacientes
         return $roleId === 1;
     }

@@ -10,7 +10,9 @@ class Recepcionista extends Model
     use HasFactory;
 
     protected $table = 'recepcionistas';
+
     protected $primaryKey = 'Id';
+
     public $timestamps = false;
 
     protected $fillable = ['Id'];

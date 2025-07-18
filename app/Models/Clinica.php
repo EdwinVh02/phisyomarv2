@@ -17,7 +17,7 @@ class Clinica extends Model
         'No_Registro_Patronal',
         'No_Aviso_de_Funcionamiento',
         'Colores_Corporativos',
-        'Logo_URL'
+        'Logo_URL',
     ];
 
     public function administradores()

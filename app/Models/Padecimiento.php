@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Padecimiento extends Model
 {
-    protected $table = 'padecimiento';
+    protected $table = 'padecimientos';
 
     protected $fillable = [
         'Nombre',
@@ -15,7 +15,7 @@ class Padecimiento extends Model
         'Nivel_Gravedad',
         'Codigo_CIE10',
         'Origen',
-        'Estudios_Imagen'
+        'Estudios_Imagen',
     ];
 
     public function tratamientos()

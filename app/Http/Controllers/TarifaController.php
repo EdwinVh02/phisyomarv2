@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tarifa;
 use App\Http\Requests\StoreTarifaRequest;
 use App\Http\Requests\UpdateTarifaRequest;
+use App\Models\Tarifa;
 
 class TarifaController extends BaseResourceController
 {

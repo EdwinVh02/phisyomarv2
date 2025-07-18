@@ -27,7 +27,7 @@ class AdjuntoController extends Controller
     {
         $validated = $request->validate([
             'registro_id' => 'required|exists:registros,id',
-            'ruta'        => 'required|string|max:255',
+            'ruta' => 'required|string|max:255',
         ]);
 
         $adjunto = Adjunto::create($validated);
@@ -50,7 +50,7 @@ class AdjuntoController extends Controller
     {
         $validated = $request->validate([
             'registro_id' => 'sometimes|exists:registros,id',
-            'ruta'        => 'sometimes|string|max:255',
+            'ruta' => 'sometimes|string|max:255',
         ]);
 
         $adjunto->update($validated);
@@ -64,6 +64,7 @@ class AdjuntoController extends Controller
     public function destroy(Adjunto $adjunto)
     {
         $adjunto->delete();
+
         return response()->json(['message' => 'Adjunto eliminado'], 200);
     }
 }

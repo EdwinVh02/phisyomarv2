@@ -57,17 +57,28 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'correo_electronico' => 'required|email',
-            'contraseña' => 'required',
-        ], [], [
-            'correo_electronico' => 'correo electrónico',
-            'contraseña' => 'contraseña',
-        ]);
+        // Manejar posibles problemas de UTF-8 parseando manualmente el JSON
+        $data = json_decode($request->getContent(), true) ?? $request->all();
+        
+        $correo = $data['correo_electronico'] ?? $request->input('correo_electronico');
+        $password = $data['contraseña'] ?? $data['password'] ?? $request->input('contraseña') ?? $request->input('password');
 
-        $usuario = Usuario::where('correo_electronico', $request->correo_electronico)->first();
+        if (!$correo || !$password) {
+            throw ValidationException::withMessages([
+                'correo_electronico' => ['El correo electrónico es requerido.'],
+                'contraseña' => ['La contraseña es requerida.'],
+            ]);
+        }
 
-        if (! $usuario || ! Hash::check($request->contraseña, $usuario->contraseña)) {
+        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages([
+                'correo_electronico' => ['El correo electrónico debe ser válido.'],
+            ]);
+        }
+
+        $usuario = Usuario::where('correo_electronico', $correo)->first();
+
+        if (! $usuario || ! Hash::check($password, $usuario->contraseña)) {
             throw ValidationException::withMessages([
                 'correo_electronico' => ['Estas credenciales no coinciden con nuestros registros.'],
             ]);

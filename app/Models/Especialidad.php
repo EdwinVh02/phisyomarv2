@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Especialidad extends Model
 {
     protected $table = 'especialidades';
+    
+    public $timestamps = false;
 
-    protected $fillable = ['Nombre'];
+    protected $fillable = ['nombre'];
 
     public function terapeutas()
     {
-        return $this->belongsToMany(Terapeuta::class, 'terapeuta_especialidad', 'EspecialidadId', 'TerapeutaId');
+        return $this->belongsToMany(Terapeuta::class, 'terapeuta_especialidades', 'especialidad_id', 'terapeuta_id');
     }
 }

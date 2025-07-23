@@ -28,6 +28,9 @@ use App\Http\Controllers\TerapeutaController;
 use App\Http\Controllers\TratamientoController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ValoracionController;
+use App\Http\Controllers\EstadisticaController;
+use App\Http\Controllers\DatabaseController;
+use App\Http\Controllers\ConfiguracionController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -39,6 +42,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('simple-login', [\App\Http\Controllers\Api\SimpleAuthController::class, 'login']);
 Route::post('auth/google', [AuthController::class, 'googleLogin']);
+
 
 // Datos de consulta pública
 Route::apiResource('especialidades', EspecialidadController::class)->only(['index', 'show']);
@@ -97,6 +101,42 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('clinicas', ClinicaController::class);
         Route::apiResource('bitacoras', BitacoraController::class);
         Route::apiResource('registros', RegistroController::class);
+        
+        // Rutas de estadísticas y analytics
+        Route::prefix('estadisticas')->group(function () {
+            Route::get('dashboard', [EstadisticaController::class, 'dashboard']);
+            Route::get('kpis/{timeRange?}', [EstadisticaController::class, 'getKPIs']);
+            Route::get('citas-por-mes/{timeRange?}', [EstadisticaController::class, 'getCitasPorMes']);
+            Route::get('ingresos-por-mes/{timeRange?}', [EstadisticaController::class, 'getIngresosPorMes']);
+            Route::get('especialidades/{timeRange?}', [EstadisticaController::class, 'getEspecialidadesMasSolicitadas']);
+            Route::get('horarios-pico/{timeRange?}', [EstadisticaController::class, 'getHorariosPico']);
+            Route::get('metricas-operativas', [EstadisticaController::class, 'getMetricasOperativas']);
+            Route::get('rendimiento-financiero', [EstadisticaController::class, 'getRendimientoFinanciero']);
+            Route::get('personal', [EstadisticaController::class, 'getPersonalStats']);
+        });
+        
+        // Rutas de administración de base de datos
+        Route::prefix('database')->group(function () {
+            Route::get('stats', [DatabaseController::class, 'getStats']);
+            Route::post('backup', [DatabaseController::class, 'createBackup']);
+            Route::get('backups', [DatabaseController::class, 'getBackups']);
+            Route::post('optimize', [DatabaseController::class, 'optimize']);
+            Route::get('health', [DatabaseController::class, 'healthCheck']);
+            Route::get('connections', [DatabaseController::class, 'getConnections']);
+        });
+        
+        // Rutas de configuración del sistema
+        Route::prefix('configuracion')->group(function () {
+            Route::get('/', [ConfiguracionController::class, 'index']);
+            Route::put('/', [ConfiguracionController::class, 'update']);
+            Route::get('{category}', [ConfiguracionController::class, 'getByCategory']);
+            Route::put('{category}', [ConfiguracionController::class, 'updateByCategory']);
+            Route::post('reset/{category?}', [ConfiguracionController::class, 'reset']);
+            Route::get('export', [ConfiguracionController::class, 'export']);
+            Route::post('import', [ConfiguracionController::class, 'import']);
+            Route::post('validate', [ConfiguracionController::class, 'validate']);
+            Route::get('history', [ConfiguracionController::class, 'getHistory']);
+        });
     });
     
     // ==========================================
@@ -158,6 +198,9 @@ Route::prefix('terapeuta')->middleware(['auth:sanctum', 'role:2'])->group(functi
     Route::get('mis-citas', [CitaController::class, 'misCitasTerapeuta']);
     Route::get('mis-pacientes', [PacienteController::class, 'misPacientes']);
     Route::get('estadisticas', [RegistroController::class, 'estadisticasTerapeuta']);
+    Route::post('pacientes/{pacienteId}/historial-medico', [PacienteController::class, 'crearHistorialMedico']);
+    Route::post('pacientes/{pacienteId}/registros', [PacienteController::class, 'agregarRegistroHistorial']);
+    Route::post('pacientes/{pacienteId}/notas', [PacienteController::class, 'agregarNotaPaciente']);
 });
 
 // Rutas específicas para recepcionistas
@@ -174,6 +217,17 @@ if (app()->environment(['local', 'testing'])) {
     // Rutas básicas de prueba
     Route::get('prueba', function () {
         return response()->json(['mensaje' => 'API funcionando correctamente']);
+    });
+
+    // Debug headers y autenticación
+    Route::get('debug-headers', function (Illuminate\Http\Request $request) {
+        return response()->json([
+            'headers' => $request->headers->all(),
+            'auth_header' => $request->header('Authorization'),
+            'bearer_token' => $request->bearerToken(),
+            'user' => $request->user(),
+            'message' => 'Debug endpoint'
+        ]);
     });
     
     // Debug de base de datos
@@ -366,6 +420,32 @@ if (app()->environment(['local', 'testing'])) {
             } catch (\Exception $e) {
                 return response()->json([
                     'error' => 'Error al obtener citas: ' . $e->getMessage()
+                ], 500);
+            }
+        });
+
+        Route::get('debug-paciente/{id}', function ($id) {
+            try {
+                $paciente = \App\Models\Paciente::with([
+                    'usuario',
+                    'historialMedico.registros' => function ($query) {
+                        $query->orderBy('Fecha_Hora', 'desc');
+                    }
+                ])->find($id);
+
+                if (!$paciente) {
+                    return response()->json(['error' => 'Paciente no encontrado'], 404);
+                }
+
+                return response()->json([
+                    'paciente_raw' => $paciente->toArray(),
+                    'historial_exists' => $paciente->historialMedico ? true : false,
+                    'registros_count' => $paciente->historialMedico?->registros?->count() ?? 0,
+                    'registros_data' => $paciente->historialMedico?->registros?->toArray() ?? []
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => 'Error: ' . $e->getMessage()
                 ], 500);
             }
         });

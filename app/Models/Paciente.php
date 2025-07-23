@@ -24,8 +24,8 @@ class Paciente extends Model
         'tutor_telefono',
         'tutor_parentesco',
         'tutor_direccion',
-        'historial_medico_id',
     ];
+
 
     public function usuario()
     {
@@ -34,7 +34,7 @@ class Paciente extends Model
 
     public function historial()
     {
-        return $this->belongsTo(HistorialMedico::class, 'historial_medico_id');
+        return $this->hasOne(HistorialMedico::class, 'paciente_id');
     }
 
     public function consentimientos()
@@ -45,5 +45,27 @@ class Paciente extends Model
     public function valoraciones()
     {
         return $this->hasMany(Valoracion::class, 'paciente_id');
+    }
+
+    public function citas()
+    {
+        return $this->hasMany(Cita::class, 'paciente_id');
+    }
+
+    public function historialMedico()
+    {
+        return $this->hasOne(HistorialMedico::class, 'paciente_id');
+    }
+
+    public function toArray()
+    {
+        $array = parent::toArray();
+        
+        // Agregar historial_medico como alias de historialMedico si existe
+        if (isset($array['historial_medico']) || $this->relationLoaded('historialMedico')) {
+            $array['historial_medico'] = $this->historialMedico;
+        }
+        
+        return $array;
     }
 }

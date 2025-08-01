@@ -8,5 +8,8 @@ cmd = "mkdir -p bootstrap/cache storage/logs storage/framework/cache/data storag
 [phases.install]
 cmd = "composer install --no-dev --optimize-autoloader && npm ci && npm run build"
 
+[phases.build]
+cmd = "php artisan config:cache && php artisan route:cache"
+
 [start]
 cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"

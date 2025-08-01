@@ -23,3 +23,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .claude
+
+# Claude Code files
+CLAUDE.md
+.claude/

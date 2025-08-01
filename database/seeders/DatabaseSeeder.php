@@ -12,9 +12,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            RolesSeeder::class,
-            UsuariosPorRolSeeder::class,
-        ]);
+        // Base de datos limpia - sin seeders
     }
 }

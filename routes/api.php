@@ -32,6 +32,7 @@ use App\Http\Controllers\EstadisticaController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\RoleManagementController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -147,6 +148,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('users/{userId}/status', [RoleManagementController::class, 'toggleUserStatus']);
             Route::get('stats', [RoleManagementController::class, 'getUserStats']);
             Route::get('history', [RoleManagementController::class, 'getRoleChangeHistory']);
+        });
+        
+        // Rutas del dashboard administrativo
+        Route::prefix('dashboard')->group(function () {
+            Route::get('stats', [DashboardController::class, 'getStats']);
+            Route::get('counts', [DashboardController::class, 'getBasicCounts']);
         });
     });
     

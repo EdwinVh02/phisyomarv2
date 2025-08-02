@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -48,8 +49,9 @@ return new class extends Migration
                 'updated_at' => now()
             ]);
 
-            // Crear registro en tabla administradores
-            DB::table('administradores')->insert([
+            // Crear registro en tabla administradores (verificar nombre correcto de tabla)
+            $adminTableName = Schema::hasTable('administradores') ? 'administradores' : 'administradors';
+            DB::table($adminTableName)->insert([
                 'id' => $adminUserId,
                 'cedula_profesional' => null,
                 'clinica_id' => null
@@ -67,7 +69,8 @@ return new class extends Migration
         
         if ($adminUser) {
             // Eliminar de tabla administradores primero (foreign key)
-            DB::table('administradores')->where('id', $adminUser->id)->delete();
+            $adminTableName = Schema::hasTable('administradores') ? 'administradores' : 'administradors';
+            DB::table($adminTableName)->where('id', $adminUser->id)->delete();
             
             // Eliminar usuario
             DB::table('usuarios')->where('id', $adminUser->id)->delete();

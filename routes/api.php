@@ -212,7 +212,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // ==========================================
 
 // Rutas específicas para pacientes
-Route::prefix('paciente')->middleware(['auth:sanctum', 'role:4'])->group(function () {
+Route::prefix('paciente')->middleware(['auth:sanctum', 'role:4', 'profile.complete'])->group(function () {
     Route::get('mis-citas', [CitaController::class, 'misCitas']);
     Route::get('cita/{id}', [CitaController::class, 'miCitaDetalle']);
     Route::get('mi-historial', [HistorialMedicoController::class, 'miHistorial']);
@@ -224,7 +224,7 @@ Route::prefix('paciente')->middleware(['auth:sanctum', 'role:4'])->group(functio
 });
 
 // Rutas específicas para terapeutas
-Route::prefix('terapeuta')->middleware(['auth:sanctum', 'role:2'])->group(function () {
+Route::prefix('terapeuta')->middleware(['auth:sanctum', 'role:2', 'profile.complete'])->group(function () {
     Route::get('mis-citas', [CitaController::class, 'misCitasTerapeuta']);
     Route::get('mis-pacientes', [PacienteController::class, 'misPacientes']);
     Route::get('estadisticas', [RegistroController::class, 'estadisticasTerapeuta']);
@@ -234,7 +234,7 @@ Route::prefix('terapeuta')->middleware(['auth:sanctum', 'role:2'])->group(functi
 });
 
 // Rutas específicas para recepcionistas
-Route::prefix('recepcionista')->middleware(['auth:sanctum', 'role:3'])->group(function () {
+Route::prefix('recepcionista')->middleware(['auth:sanctum', 'role:3', 'profile.complete'])->group(function () {
     Route::get('citas-hoy', [CitaController::class, 'citasHoy']);
     Route::post('registrar-llegada/{cita}', [CitaController::class, 'registrarLlegada']);
 });

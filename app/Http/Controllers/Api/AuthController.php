@@ -101,7 +101,36 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return response()->json($request->user());
+        $user = $request->user();
+        
+        // Cargar datos específicos del rol
+        $user->load(['rol']);
+        
+        // Agregar datos específicos según el rol
+        switch ($user->rol_id) {
+            case 4: // Paciente
+                $user->load('paciente');
+                break;
+            case 2: // Terapeuta
+                $user->load(['terapeuta', 'terapeuta.especialidades']);
+                break;
+            case 3: // Recepcionista
+                $user->load('recepcionista');
+                break;
+            case 1: // Administrador
+                $user->load(['administrador', 'administrador.clinica']);
+                break;
+        }
+        
+        return response()->json([
+            'user' => $user,
+            'role_name' => $user->getRoleName(),
+            'permissions' => [
+                'can_manage_patients' => $user->canManagePatients(),
+                'can_view_stats' => $user->canViewGeneralStats(),
+                'can_access_financials' => $user->canAccessFinancials(),
+            ]
+        ]);
     }
 
     public function updateProfile(Request $request)

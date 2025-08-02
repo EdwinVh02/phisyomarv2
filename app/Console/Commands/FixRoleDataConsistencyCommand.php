@@ -221,22 +221,22 @@ class FixRoleDataConsistencyCommand extends Command
 
         switch ($issue['role_id']) {
             case 4: // Paciente
-                Paciente::create(['id' => $user->id]);
+                DB::table('pacientes')->insert(['id' => $user->id]);
                 break;
 
             case 2: // Terapeuta
-                Terapeuta::create([
+                DB::table('terapeutas')->insert([
                     'id' => $user->id,
                     'estatus' => 'activo'
                 ]);
                 break;
 
             case 3: // Recepcionista
-                Recepcionista::create(['id' => $user->id]);
+                DB::table('recepcionistas')->insert(['id' => $user->id]);
                 break;
 
             case 1: // Administrador
-                Administrador::create(['id' => $user->id]);
+                DB::table('administradores')->insert(['id' => $user->id]);
                 break;
 
             default:

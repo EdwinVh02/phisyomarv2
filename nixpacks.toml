@@ -12,4 +12,4 @@ cmd = "composer install --no-dev --optimize-autoloader && npm ci && npm run buil
 cmd = "php artisan config:cache && php artisan route:cache"
 
 [start]
-cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php artisan migrate --force && php artisan production:initialize-data --force && php artisan serve --host=0.0.0.0 --port=$PORT"

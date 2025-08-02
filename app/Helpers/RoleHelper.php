@@ -91,7 +91,7 @@ class RoleHelper
      */
     public static function getRoleName(Usuario $user): ?string
     {
-        return $user->rol ? $user->rol->nombre : null;
+        return $user->rol ? $user->rol->name : null;
     }
 
     /**

@@ -31,6 +31,7 @@ use App\Http\Controllers\ValoracionController;
 use App\Http\Controllers\EstadisticaController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\RoleManagementController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -136,6 +137,16 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('import', [ConfiguracionController::class, 'import']);
             Route::post('validate', [ConfiguracionController::class, 'validate']);
             Route::get('history', [ConfiguracionController::class, 'getHistory']);
+        });
+        
+        // Rutas de gestión de roles y usuarios (solo administradores)
+        Route::prefix('role-management')->group(function () {
+            Route::get('users', [RoleManagementController::class, 'getUsers']);
+            Route::get('roles', [RoleManagementController::class, 'getRoles']);
+            Route::put('users/{userId}/role', [RoleManagementController::class, 'changeUserRole']);
+            Route::put('users/{userId}/status', [RoleManagementController::class, 'toggleUserStatus']);
+            Route::get('stats', [RoleManagementController::class, 'getUserStats']);
+            Route::get('history', [RoleManagementController::class, 'getRoleChangeHistory']);
         });
     });
     

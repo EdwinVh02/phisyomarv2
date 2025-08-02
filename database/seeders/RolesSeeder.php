@@ -14,7 +14,7 @@ class RolesSeeder extends Seeder
     {
         // Limpiar la tabla antes de insertar (¡OJO con las foreign keys!)
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('roles')->truncate();
+        DB::table('rols')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $roles = [
@@ -25,7 +25,7 @@ class RolesSeeder extends Seeder
         ];
 
         foreach ($roles as $rol) {
-            DB::table('roles')->insert($rol);
+            DB::table('rols')->insert($rol);
         }
 
         $this->command->info('Roles creados exitosamente:');

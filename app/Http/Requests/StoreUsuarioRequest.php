@@ -20,7 +20,7 @@ class StoreUsuarioRequest extends FormRequest
             'correo_electronico' => 'required|email|unique:usuarios,email',
             'telefono' => 'nullable|string|max:20',
             'contraseña' => 'required|string|min:6',
-            'rol_id' => 'required|exists:rols,id',
+            'rol_id' => 'required|exists:roles,id',
             'estatus' => 'nullable|in:activo,inactivo',
         ];
     }

@@ -20,7 +20,7 @@ class UpdateUsuarioRequest extends FormRequest
             'correo_electronico' => 'sometimes|email|unique:usuarios,email,'.$this->usuario,
             'telefono' => 'nullable|string|max:20',
             'contrasena' => 'nullable|string|min:6',
-            'rol_id' => 'sometimes|exists:rols,id',
+            'rol_id' => 'sometimes|exists:roles,id',
             'estatus' => 'nullable|in:activo,inactivo',
         ];
     }

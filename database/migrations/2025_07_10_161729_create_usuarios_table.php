@@ -27,7 +27,7 @@ return new class extends Migration
             $table->enum('estatus', ['activo', 'inactivo', 'suspendido'])->default('activo');
             $table->unsignedBigInteger('rol_id');
             $table->timestamps();
-            $table->foreign('rol_id')->references('id')->on('rols');
+            $table->foreign('rol_id')->references('id')->on('roles');
             $table->index('telefono');
             $table->index('curp');
         });

@@ -83,7 +83,7 @@ class RoleManagementController extends Controller
     {
         try {
             $request->validate([
-                'rol_id' => 'required|exists:rols,id',
+                'rol_id' => 'required|exists:roles,id',
                 'motivo' => 'nullable|string|max:255'
             ]);
 
@@ -219,10 +219,10 @@ class RoleManagementController extends Controller
     {
         try {
             $stats = DB::table('usuarios')
-                ->select('rols.name as rol_name', 'usuarios.estatus', DB::raw('COUNT(*) as count'))
-                ->join('rols', 'usuarios.rol_id', '=', 'rols.id')
-                ->groupBy('rols.name', 'usuarios.estatus')
-                ->orderBy('rols.name')
+                ->select('roles.name as rol_name', 'usuarios.estatus', DB::raw('COUNT(*) as count'))
+                ->join('roles', 'usuarios.rol_id', '=', 'roles.id')
+                ->groupBy('roles.name', 'usuarios.estatus')
+                ->orderBy('roles.name')
                 ->get();
 
             $formattedStats = [];

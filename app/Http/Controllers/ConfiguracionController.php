@@ -207,7 +207,7 @@ class ConfiguracionController extends Controller
     /**
      * Validar configuración
      */
-    public function validate(Request $request)
+    public function validateConfig(Request $request)
     {
         try {
             $config = $request->all();

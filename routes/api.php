@@ -136,7 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('reset/{category?}', [ConfiguracionController::class, 'reset']);
             Route::get('export', [ConfiguracionController::class, 'export']);
             Route::post('import', [ConfiguracionController::class, 'import']);
-            Route::post('validate', [ConfiguracionController::class, 'validate']);
+            Route::post('validate', [ConfiguracionController::class, 'validateConfig']);
             Route::get('history', [ConfiguracionController::class, 'getHistory']);
         });
         

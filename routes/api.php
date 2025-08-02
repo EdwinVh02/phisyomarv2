@@ -33,6 +33,7 @@ use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\RoleManagementController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileCompletionController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -93,6 +94,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
     Route::put('user/profile', [AuthController::class, 'updateProfile']);
     Route::post('logout', [AuthController::class, 'logout']);
+    
+    // ==========================================
+    // GESTIÓN DE PERFILES ESPECÍFICOS POR ROL
+    // ==========================================
+    Route::prefix('user/profile')->group(function () {
+        Route::get('check-completeness', [ProfileCompletionController::class, 'checkCompleteness']);
+        Route::get('data', [ProfileCompletionController::class, 'getProfileData']);
+        Route::get('missing-fields', [ProfileCompletionController::class, 'getMissingFields']);
+        Route::post('complete', [ProfileCompletionController::class, 'completeProfile']);
+        Route::patch('update-field', [ProfileCompletionController::class, 'updateProfileField']);
+    });
     
     // ==========================================
     // RECURSOS ADMINISTRATIVOS

@@ -101,7 +101,7 @@ class RoleManagementController extends Controller
 
             DB::beginTransaction();
 
-            // Cambiar el rol
+            // Cambiar el rol (el Observer se encargará de crear/actualizar registros específicos)
             $usuario->rol_id = $request->rol_id;
             $usuario->save();
 

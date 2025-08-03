@@ -110,6 +110,11 @@ class AuthController extends Controller
         switch ($user->rol_id) {
             case 4: // Paciente
                 $user->load('paciente');
+                // Si no existe el paciente, crearlo
+                if (!$user->paciente) {
+                    \App\Models\Paciente::create(['id' => $user->id]);
+                    $user->load('paciente'); // Recargar la relación
+                }
                 break;
             case 2: // Terapeuta
                 $user->load(['terapeuta', 'terapeuta.especialidades']);

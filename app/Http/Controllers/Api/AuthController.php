@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Usuario;
+use App\Services\UserRoleRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -44,14 +45,23 @@ class AuthController extends Controller
             'curp' => $request->curp,
             'ocupacion' => $request->ocupacion,
             'estatus' => $request->estatus ?? 'activo',
-            'rol_id' => $request->rol_id ?? 4,
+            'rol_id' => $request->rol_id ?? 4, // Por defecto paciente
         ]);
+
+        // Crear automáticamente el registro específico según el rol
+        UserRoleRegistrationService::createRoleSpecificRecord($usuario);
 
         $token = $usuario->createToken('API Token')->plainTextToken;
 
+        // Obtener datos completos del perfil
+        $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
+
         return response()->json([
-            'usuario' => $usuario,
+            'usuario' => $profileData['user'],
             'token' => $token,
+            'profile_complete' => $profileData['profile_complete'],
+            'missing_fields' => $profileData['missing_fields'],
+            'role_name' => $profileData['role_name'],
         ], 201);
     }
 
@@ -84,11 +94,20 @@ class AuthController extends Controller
             ]);
         }
 
+        // Crear automáticamente el registro específico si no existe
+        UserRoleRegistrationService::createRoleSpecificRecord($usuario);
+
         $token = $usuario->createToken('API Token')->plainTextToken;
 
+        // Obtener datos completos del perfil
+        $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
+
         return response()->json([
-            'usuario' => $usuario,
+            'usuario' => $profileData['user'],
             'token' => $token,
+            'profile_complete' => $profileData['profile_complete'],
+            'missing_fields' => $profileData['missing_fields'],
+            'role_name' => $profileData['role_name'],
         ]);
     }
 
@@ -103,33 +122,17 @@ class AuthController extends Controller
     {
         $user = $request->user();
         
-        // Cargar datos específicos del rol
-        $user->load(['rol']);
+        // Crear automáticamente el registro específico si no existe
+        UserRoleRegistrationService::createRoleSpecificRecord($user);
         
-        // Agregar datos específicos según el rol
-        switch ($user->rol_id) {
-            case 4: // Paciente
-                $user->load('paciente');
-                // Si no existe el paciente, crearlo
-                if (!$user->paciente) {
-                    \App\Models\Paciente::create(['id' => $user->id]);
-                    $user->load('paciente'); // Recargar la relación
-                }
-                break;
-            case 2: // Terapeuta
-                $user->load(['terapeuta', 'terapeuta.especialidades']);
-                break;
-            case 3: // Recepcionista
-                $user->load('recepcionista');
-                break;
-            case 1: // Administrador
-                $user->load(['administrador', 'administrador.clinica']);
-                break;
-        }
+        // Obtener datos completos del perfil
+        $profileData = UserRoleRegistrationService::getUserProfileData($user);
         
         return response()->json([
-            'user' => $user,
-            'role_name' => $user->getRoleName(),
+            'user' => $profileData['user'],
+            'role_name' => $profileData['role_name'],
+            'profile_complete' => $profileData['profile_complete'],
+            'missing_fields' => $profileData['missing_fields'],
             'permissions' => [
                 'can_manage_patients' => $user->canManagePatients(),
                 'can_view_stats' => $user->canViewGeneralStats(),
@@ -222,13 +225,25 @@ class AuthController extends Controller
                     'estatus' => 'activo',
                     'rol_id' => 4, // Paciente por defecto
                 ]);
+                
+                // Crear automáticamente el registro específico según el rol
+                UserRoleRegistrationService::createRoleSpecificRecord($usuario);
             }
 
+            // Asegurar que existe el registro específico del rol
+            UserRoleRegistrationService::createRoleSpecificRecord($usuario);
+
             $token = $usuario->createToken('Google API Token')->plainTextToken;
+            
+            // Obtener datos completos del perfil
+            $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
 
             return response()->json([
-                'usuario' => $usuario,
+                'usuario' => $profileData['user'],
                 'token' => $token,
+                'profile_complete' => $profileData['profile_complete'],
+                'missing_fields' => $profileData['missing_fields'],
+                'role_name' => $profileData['role_name'],
                 'mensaje' => 'Login con Google exitoso',
             ]);
 

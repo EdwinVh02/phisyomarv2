@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ProfileCompletionService;
+use App\Services\UserRoleRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -10,31 +10,47 @@ use Illuminate\Validation\ValidationException;
 
 class ProfileCompletionController extends Controller
 {
-    private ProfileCompletionService $profileService;
-
-    public function __construct(ProfileCompletionService $profileService)
-    {
-        $this->profileService = $profileService;
-    }
-
     /**
      * Verificar el estado de completitud del perfil del usuario actual
      */
     public function checkCompleteness(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $status = $this->profileService->isProfileComplete($user);
-        $requiredFields = $this->profileService->getRequiredFieldsForRole($user->rol_id);
+        
+        // Crear automáticamente el registro específico si no existe
+        UserRoleRegistrationService::createRoleSpecificRecord($user);
+        
+        $isComplete = UserRoleRegistrationService::isProfileComplete($user);
+        $missingFields = UserRoleRegistrationService::getMissingProfileFields($user);
+        $profileData = UserRoleRegistrationService::getUserProfileData($user);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'complete' => $status['complete'],
-                'missing_fields' => $status['missing_fields'],
-                'required_fields' => $requiredFields,
+                'complete' => $isComplete,
+                'missing_fields' => $missingFields,
                 'role' => $user->getRoleName(),
-                'user_id' => $user->id
+                'user_id' => $user->id,
+                'profile_data' => $profileData
             ]
+        ]);
+    }
+
+    /**
+     * Obtener los datos actuales del perfil específico del usuario
+     */
+    public function getProfileData(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Crear automáticamente el registro específico si no existe
+        UserRoleRegistrationService::createRoleSpecificRecord($user);
+        
+        $profileData = UserRoleRegistrationService::getUserProfileData($user);
+
+        return response()->json([
+            'success' => true,
+            'data' => $profileData
         ]);
     }
 
@@ -46,17 +62,37 @@ class ProfileCompletionController extends Controller
         $user = Auth::user();
 
         try {
+            // Crear automáticamente el registro específico si no existe
+            UserRoleRegistrationService::createRoleSpecificRecord($user);
+            
             // Validar datos según el rol
             $validatedData = $this->validateProfileData($request, $user->rol_id);
             
-            // Completar perfil
-            $result = $this->profileService->completeProfile($user, $validatedData);
-
+            // Actualizar datos del usuario base si están presentes
+            $userFields = ['telefono', 'direccion', 'fecha_nacimiento', 'sexo', 'curp', 'ocupacion'];
+            $userUpdateData = [];
+            foreach ($userFields as $field) {
+                if (isset($validatedData[$field])) {
+                    $userUpdateData[$field] = $validatedData[$field];
+                    unset($validatedData[$field]);
+                }
+            }
+            
+            if (!empty($userUpdateData)) {
+                $user->update($userUpdateData);
+            }
+            
+            // Actualizar datos específicos del rol
+            $result = $this->updateRoleSpecificData($user, $validatedData);
+            
             if ($result['success']) {
+                // Recargar datos completos del perfil
+                $profileData = UserRoleRegistrationService::getUserProfileData($user->fresh());
+                
                 return response()->json([
                     'success' => true,
-                    'message' => $result['message'],
-                    'data' => $result['data']
+                    'message' => 'Perfil completado exitosamente',
+                    'data' => $profileData
                 ]);
             } else {
                 return response()->json([
@@ -80,95 +116,24 @@ class ProfileCompletionController extends Controller
     }
 
     /**
-     * Obtener los datos actuales del perfil específico del usuario
-     */
-    public function getProfileData(Request $request): JsonResponse
-    {
-        $user = Auth::user();
-        $profileData = null;
-
-        switch ($user->rol_id) {
-            case 4: // Paciente
-                $profileData = $user->paciente;
-                break;
-            case 2: // Terapeuta
-                $profileData = $user->terapeuta ? $user->terapeuta->load('especialidades') : null;
-                break;
-            case 3: // Recepcionista
-                $profileData = $user->recepcionista;
-                break;
-            case 1: // Administrador
-                $profileData = $user->administrador ? $user->administrador->load('clinica') : null;
-                break;
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'user' => $user,
-                'profile' => $profileData,
-                'role' => $user->getRoleName(),
-                'required_fields' => $this->profileService->getRequiredFieldsForRole($user->rol_id)
-            ]
-        ]);
-    }
-
-    /**
-     * Validar datos del perfil según el rol
-     */
-    private function validateProfileData(Request $request, int $rolId): array
-    {
-        $rules = match ($rolId) {
-            4 => [ // Paciente
-                'contacto_emergencia_nombre' => 'required|string|max:100',
-                'contacto_emergencia_telefono' => 'required|string|max:20',
-                'contacto_emergencia_parentesco' => 'required|string|max:50',
-                'tutor_nombre' => 'nullable|string|max:100',
-                'tutor_telefono' => 'nullable|string|max:20',
-                'tutor_parentesco' => 'nullable|string|max:50',
-                'tutor_direccion' => 'nullable|string|max:150',
-            ],
-            2 => [ // Terapeuta
-                'cedula_profesional' => 'required|string|max:30|unique:terapeutas,cedula_profesional,' . Auth::id(),
-                'especialidad_principal' => 'required|string|max:100',
-                'experiencia_anios' => 'required|integer|min:0|max:50',
-                'estatus' => 'nullable|in:activo,inactivo,suspendido',
-                'especialidades' => 'nullable|array',
-                'especialidades.*' => 'exists:especialidads,id'
-            ],
-            3 => [ // Recepcionista
-                // Agregar reglas cuando se definan campos específicos
-            ],
-            1 => [ // Administrador
-                'cedula_profesional' => 'nullable|string|max:30|unique:administradors,cedula_profesional,' . Auth::id(),
-                'clinica_id' => 'nullable|exists:clinicas,id'
-            ],
-            default => []
-        };
-
-        return $request->validate($rules);
-    }
-
-    /**
      * Obtener información sobre qué campos faltan por completar
      */
     public function getMissingFields(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $status = $this->profileService->isProfileComplete($user);
-        $requiredFields = $this->profileService->getRequiredFieldsForRole($user->rol_id);
-
-        $missingFieldsInfo = [];
-        foreach ($status['missing_fields'] as $field) {
-            $missingFieldsInfo[$field] = $requiredFields[$field] ?? ucfirst(str_replace('_', ' ', $field));
-        }
+        
+        // Crear automáticamente el registro específico si no existe
+        UserRoleRegistrationService::createRoleSpecificRecord($user);
+        
+        $missingFields = UserRoleRegistrationService::getMissingProfileFields($user);
+        $isComplete = UserRoleRegistrationService::isProfileComplete($user);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'complete' => $status['complete'],
-                'missing_count' => count($status['missing_fields']),
-                'missing_fields' => $missingFieldsInfo,
+                'complete' => $isComplete,
+                'missing_count' => count($missingFields),
+                'missing_fields' => $missingFields,
                 'role' => $user->getRoleName()
             ]
         ]);
@@ -185,29 +150,124 @@ class ProfileCompletionController extends Controller
             $field = $request->input('field');
             $value = $request->input('value');
 
-            // Validar que el campo sea válido para el rol
-            $allowedFields = array_keys($this->profileService->getRequiredFieldsForRole($user->rol_id));
-            
-            if (!in_array($field, $allowedFields)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Campo no válido para este rol'
-                ], 400);
-            }
+            // Crear automáticamente el registro específico si no existe
+            UserRoleRegistrationService::createRoleSpecificRecord($user);
 
             // Preparar datos para actualización
             $updateData = [$field => $value];
             
-            // Completar perfil (solo actualizará el campo especificado)
-            $result = $this->profileService->completeProfile($user, $updateData);
+            // Validar datos
+            $validatedData = $this->validateProfileData(
+                new Request($updateData), 
+                $user->rol_id
+            );
+            
+            // Actualizar campo
+            $result = $this->updateRoleSpecificData($user, $validatedData);
 
-            return response()->json($result);
+            if ($result['success']) {
+                $profileData = UserRoleRegistrationService::getUserProfileData($user->fresh());
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Campo actualizado exitosamente',
+                    'data' => $profileData
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message']
+                ], 400);
+            }
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar campo: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Validar datos del perfil según el rol
+     */
+    private function validateProfileData(Request $request, int $rolId): array
+    {
+        $baseRules = [
+            'telefono' => 'sometimes|string|max:20',
+            'direccion' => 'sometimes|string|max:255',
+            'fecha_nacimiento' => 'sometimes|date',
+            'sexo' => 'sometimes|in:Masculino,Femenino,Otro',
+            'curp' => 'sometimes|string|size:18|unique:usuarios,curp,' . Auth::id(),
+            'ocupacion' => 'sometimes|string|max:100',
+        ];
+
+        $roleSpecificRules = match ($rolId) {
+            4 => [ // Paciente
+                'contacto_emergencia_nombre' => 'sometimes|string|max:100',
+                'contacto_emergencia_telefono' => 'sometimes|string|max:20',
+                'contacto_emergencia_parentesco' => 'sometimes|string|max:50',
+                'tutor_nombre' => 'sometimes|string|max:100',
+                'tutor_telefono' => 'sometimes|string|max:20',
+                'tutor_parentesco' => 'sometimes|string|max:50',
+                'tutor_direccion' => 'sometimes|string|max:150',
+            ],
+            2 => [ // Terapeuta
+                'cedula_profesional' => 'sometimes|string|max:30',
+                'especialidad_principal' => 'sometimes|string|max:100',
+                'experiencia_anios' => 'sometimes|integer|min:0|max:50',
+                'estatus' => 'sometimes|in:activo,inactivo,suspendido',
+            ],
+            3 => [ // Recepcionista
+                // Los recepcionistas no tienen campos específicos obligatorios por ahora
+            ],
+            1 => [ // Administrador
+                'cedula_profesional' => 'sometimes|string|max:30',
+                'clinica_id' => 'sometimes|exists:clinicas,id'
+            ],
+            default => []
+        };
+
+        $rules = array_merge($baseRules, $roleSpecificRules);
+        return $request->validate($rules);
+    }
+
+    /**
+     * Actualizar datos específicos del rol
+     */
+    private function updateRoleSpecificData($user, array $validatedData): array
+    {
+        try {
+            switch ($user->rol_id) {
+                case 4: // Paciente
+                    if ($user->paciente) {
+                        $user->paciente->update($validatedData);
+                    }
+                    break;
+                    
+                case 2: // Terapeuta
+                    if ($user->terapeuta) {
+                        $user->terapeuta->update($validatedData);
+                    }
+                    break;
+                    
+                case 3: // Recepcionista
+                    if ($user->recepcionista) {
+                        $user->recepcionista->update($validatedData);
+                    }
+                    break;
+                    
+                case 1: // Administrador
+                    if ($user->administrador) {
+                        $user->administrador->update($validatedData);
+                    }
+                    break;
+            }
+            
+            return ['success' => true, 'message' => 'Datos actualizados correctamente'];
+            
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()];
         }
     }
 }

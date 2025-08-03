@@ -51,19 +51,39 @@ class CitaController extends Controller
     // Métodos específicos para pacientes
     public function misCitas(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        // Verificar que el usuario sea un paciente
-        if ($user->rol_id !== 4) {
-            return response()->json(['error' => 'No autorizado. Solo los pacientes pueden ver sus citas.'], 403);
+            // Verificar que el usuario sea un paciente
+            if ($user->rol_id !== 4) {
+                return response()->json(['error' => 'No autorizado. Solo los pacientes pueden ver sus citas.'], 403);
+            }
+
+            // Verificar si existe el registro de paciente, si no, crearlo
+            $paciente = \App\Models\Paciente::find($user->id);
+            if (!$paciente) {
+                \App\Models\Paciente::create(['id' => $user->id]);
+            }
+
+            $citas = Cita::where('paciente_id', $user->id)
+                ->with(['terapeuta.usuario', 'registro'])
+                ->orderBy('fecha_hora', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $citas,
+                'message' => 'Citas obtenidas correctamente'
+            ], 200);
+            
+        } catch (\Exception $e) {
+            Log::error('Error en misCitas: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $citas = Cita::where('paciente_id', $user->id)
-            ->with(['terapeuta.usuario', 'registro'])
-            ->orderBy('fecha_hora', 'desc')
-            ->get();
-
-        return response()->json($citas, 200);
     }
 
     public function miCitaDetalle(Request $request, $id)

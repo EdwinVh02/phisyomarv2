@@ -89,9 +89,17 @@ class CheckProfileCompleteness
             case 4: // Paciente
                 $paciente = $user->paciente;
                 if (!$paciente) {
-                    $missingFields[] = 'registro_paciente';
-                    $complete = false;
-                } else {
+                    // Crear automáticamente el registro de paciente si no existe
+                    try {
+                        $paciente = \App\Models\Paciente::create(['id' => $user->id]);
+                        $user->load('paciente'); // Recargar la relación
+                    } catch (\Exception $e) {
+                        $missingFields[] = 'registro_paciente';
+                        $complete = false;
+                    }
+                }
+                
+                if ($paciente) {
                     // Verificar campos obligatorios para pacientes
                     if (!$paciente->contacto_emergencia_nombre) {
                         $missingFields[] = 'contacto_emergencia_nombre';
@@ -113,9 +121,17 @@ class CheckProfileCompleteness
             case 2: // Terapeuta
                 $terapeuta = $user->terapeuta;
                 if (!$terapeuta) {
-                    $missingFields[] = 'registro_terapeuta';
-                    $complete = false;
-                } else {
+                    // Crear automáticamente el registro de terapeuta si no existe
+                    try {
+                        $terapeuta = \App\Models\Terapeuta::create(['id' => $user->id]);
+                        $user->load('terapeuta'); // Recargar la relación
+                    } catch (\Exception $e) {
+                        $missingFields[] = 'registro_terapeuta';
+                        $complete = false;
+                    }
+                }
+                
+                if ($terapeuta) {
                     // Verificar campos obligatorios para terapeutas
                     if (!$terapeuta->cedula_profesional) {
                         $missingFields[] = 'cedula_profesional';
@@ -136,8 +152,14 @@ class CheckProfileCompleteness
             case 3: // Recepcionista
                 $recepcionista = $user->recepcionista;
                 if (!$recepcionista) {
-                    $missingFields[] = 'registro_recepcionista';
-                    $complete = false;
+                    // Crear automáticamente el registro de recepcionista si no existe
+                    try {
+                        $recepcionista = \App\Models\Recepcionista::create(['id' => $user->id]);
+                        $user->load('recepcionista'); // Recargar la relación
+                    } catch (\Exception $e) {
+                        $missingFields[] = 'registro_recepcionista';
+                        $complete = false;
+                    }
                 }
                 // Los recepcionistas pueden tener campos menos críticos
                 // que se pueden completar opcionalmente
@@ -146,9 +168,17 @@ class CheckProfileCompleteness
             case 1: // Administrador
                 $administrador = $user->administrador;
                 if (!$administrador) {
-                    $missingFields[] = 'registro_administrador';
-                    $complete = false;
-                } else {
+                    // Crear automáticamente el registro de administrador si no existe
+                    try {
+                        $administrador = \App\Models\Administrador::create(['id' => $user->id]);
+                        $user->load('administrador'); // Recargar la relación
+                    } catch (\Exception $e) {
+                        $missingFields[] = 'registro_administrador';
+                        $complete = false;
+                    }
+                }
+                
+                if ($administrador) {
                     // Verificar campos opcionales pero recomendados
                     if (!$administrador->cedula_profesional) {
                         $missingFields[] = 'cedula_profesional';

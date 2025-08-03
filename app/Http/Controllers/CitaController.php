@@ -59,11 +59,7 @@ class CitaController extends Controller
                 return response()->json(['error' => 'No autorizado. Solo los pacientes pueden ver sus citas.'], 403);
             }
 
-            // Verificar si existe el registro de paciente, si no, crearlo
-            $paciente = \App\Models\Paciente::find($user->id);
-            if (!$paciente) {
-                \App\Models\Paciente::create(['id' => $user->id]);
-            }
+            // El middleware ya se encarga de crear el registro de paciente automáticamente
 
             $citas = Cita::where('paciente_id', $user->id)
                 ->with(['terapeuta.usuario', 'registro'])
@@ -121,11 +117,7 @@ class CitaController extends Controller
                 return response()->json(['error' => 'No autorizado. Solo los pacientes pueden agendar citas.'], 403);
             }
 
-            // Verificar que existe el registro del paciente
-            $paciente = \App\Models\Paciente::find($user->id);
-            if (! $paciente) {
-                return response()->json(['error' => 'Registro de paciente no encontrado'], 404);
-            }
+            // El middleware ya se encarga de crear el registro de paciente automáticamente
             $pacienteId = $user->id;
         }
 

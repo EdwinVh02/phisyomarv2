@@ -194,23 +194,23 @@ class ProfileCompletionController extends Controller
     private function validateProfileData(Request $request, int $rolId): array
     {
         $baseRules = [
-            'telefono' => 'sometimes|string|max:20',
-            'direccion' => 'sometimes|string|max:255',
-            'fecha_nacimiento' => 'sometimes|date',
-            'sexo' => 'sometimes|in:Masculino,Femenino,Otro',
-            'curp' => 'sometimes|string|size:18|unique:usuarios,curp,' . Auth::id(),
-            'ocupacion' => 'sometimes|string|max:100',
+            'telefono' => 'sometimes|nullable|string|max:20',
+            'direccion' => 'sometimes|nullable|string|max:255',
+            'fecha_nacimiento' => 'sometimes|nullable|date',
+            'sexo' => 'sometimes|nullable|in:Masculino,Femenino,Otro',
+            'curp' => 'sometimes|nullable|string|max:18|unique:usuarios,curp,' . Auth::id(),
+            'ocupacion' => 'sometimes|nullable|string|max:100',
         ];
 
         $roleSpecificRules = match ($rolId) {
             4 => [ // Paciente
-                'contacto_emergencia_nombre' => 'sometimes|string|max:100',
-                'contacto_emergencia_telefono' => 'sometimes|string|max:20',
-                'contacto_emergencia_parentesco' => 'sometimes|string|max:50',
-                'tutor_nombre' => 'sometimes|string|max:100',
-                'tutor_telefono' => 'sometimes|string|max:20',
-                'tutor_parentesco' => 'sometimes|string|max:50',
-                'tutor_direccion' => 'sometimes|string|max:150',
+                'contacto_emergencia_nombre' => 'sometimes|nullable|string|max:100',
+                'contacto_emergencia_telefono' => 'sometimes|nullable|string|max:20',
+                'contacto_emergencia_parentesco' => 'sometimes|nullable|string|max:50',
+                'tutor_nombre' => 'sometimes|nullable|string|max:100',
+                'tutor_telefono' => 'sometimes|nullable|string|max:20',
+                'tutor_parentesco' => 'sometimes|nullable|string|max:50',
+                'tutor_direccion' => 'sometimes|nullable|string|max:150',
             ],
             2 => [ // Terapeuta
                 'cedula_profesional' => 'sometimes|string|max:30',

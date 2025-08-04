@@ -205,13 +205,21 @@ class ConfiguracionController extends Controller
     }
 
     /**
-     * Validar configuración
+     * Validar configuración (endpoint público)
      */
     public function validateConfig(Request $request)
     {
         try {
             $config = $request->all();
             $errors = [];
+
+            // Validar estructura básica
+            $requiredSections = ['general', 'notificaciones', 'seguridad', 'sistema'];
+            foreach ($requiredSections as $section) {
+                if (!isset($config[$section])) {
+                    $errors[] = "Sección '{$section}' es requerida en la configuración";
+                }
+            }
 
             // Validar configuración general
             if (isset($config['general'])) {
@@ -243,6 +251,19 @@ class ConfiguracionController extends Controller
                 'success' => false,
                 'message' => 'Error al validar configuración: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Validar estructura de configuración (uso interno)
+     */
+    private function validateConfigStructure($config)
+    {
+        $requiredSections = ['general', 'notificaciones', 'seguridad', 'sistema'];
+        foreach ($requiredSections as $section) {
+            if (!isset($config[$section])) {
+                throw new \Exception("Sección '{$section}' es requerida en la configuración");
+            }
         }
     }
 
@@ -350,19 +371,5 @@ class ConfiguracionController extends Controller
                 'logs_nivel' => 'info'
             ]
         ];
-    }
-
-    /**
-     * Validar estructura de configuración
-     */
-    private function validateConfig($config)
-    {
-        $requiredSections = ['general', 'notificaciones', 'seguridad', 'sistema'];
-        
-        foreach ($requiredSections as $section) {
-            if (!isset($config[$section])) {
-                throw new \Exception("Sección '{$section}' es requerida en la configuración");
-            }
-        }
     }
 }

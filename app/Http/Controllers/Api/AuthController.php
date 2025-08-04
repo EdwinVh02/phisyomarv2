@@ -57,7 +57,7 @@ class AuthController extends Controller
         $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
 
         return response()->json([
-            'usuario' => $profileData['user'],
+            'usuario' => $usuario->fresh()->load(['rol', 'paciente', 'terapeuta', 'recepcionista', 'administrador']),
             'token' => $token,
             'profile_complete' => $profileData['profile_complete'],
             'missing_fields' => $profileData['missing_fields'],
@@ -103,7 +103,7 @@ class AuthController extends Controller
         $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
 
         return response()->json([
-            'usuario' => $profileData['user'],
+            'usuario' => $usuario->fresh()->load(['rol', 'paciente', 'terapeuta', 'recepcionista', 'administrador']),
             'token' => $token,
             'profile_complete' => $profileData['profile_complete'],
             'missing_fields' => $profileData['missing_fields'],
@@ -128,8 +128,26 @@ class AuthController extends Controller
         // Obtener datos completos del perfil
         $profileData = UserRoleRegistrationService::getUserProfileData($user);
         
+        // Cargar relaciones específicas según el rol
+        $user = $user->fresh()->load(['rol']);
+        
+        switch ($user->rol_id) {
+            case 4: // Paciente
+                $user->load('paciente');
+                break;
+            case 2: // Terapeuta
+                $user->load(['terapeuta', 'terapeuta.especialidades']);
+                break;
+            case 3: // Recepcionista
+                $user->load('recepcionista');
+                break;
+            case 1: // Administrador
+                $user->load(['administrador', 'administrador.clinica']);
+                break;
+        }
+        
         return response()->json([
-            'user' => $profileData['user'],
+            'user' => $user,
             'role_name' => $profileData['role_name'],
             'profile_complete' => $profileData['profile_complete'],
             'missing_fields' => $profileData['missing_fields'],
@@ -239,7 +257,7 @@ class AuthController extends Controller
             $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
 
             return response()->json([
-                'usuario' => $profileData['user'],
+                'usuario' => $usuario->fresh()->load(['rol', 'paciente', 'terapeuta', 'recepcionista', 'administrador']),
                 'token' => $token,
                 'profile_complete' => $profileData['profile_complete'],
                 'missing_fields' => $profileData['missing_fields'],

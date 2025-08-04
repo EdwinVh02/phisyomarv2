@@ -9,7 +9,7 @@ class TerapeutaEspecialidad extends Pivot
     protected $table = 'terapeuta_especialidad';
 
     protected $fillable = [
-        'TerapeutaId',
-        'EspecialidadId',
+        'terapeuta_id',
+        'especialidad_id',
     ];
 }

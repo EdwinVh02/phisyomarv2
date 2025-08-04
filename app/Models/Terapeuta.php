@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Terapeuta extends Model
 {
@@ -28,9 +29,14 @@ class Terapeuta extends Model
         return $this->belongsTo(Usuario::class, 'id');
     }
 
-    public function especialidades()
+    public function especialidades(): BelongsToMany
     {
-        return $this->belongsToMany(Especialidad::class, 'terapeuta_especialidad', 'terapeuta_id', 'especialidad_id');
+        return $this->belongsToMany(
+            Especialidad::class,
+            'terapeuta_especialidad',
+            'terapeuta_id',
+            'especialidad_id'
+        );
     }
 
     public function experiencias()

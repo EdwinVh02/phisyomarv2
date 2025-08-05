@@ -67,48 +67,117 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // Manejar posibles problemas de UTF-8 parseando manualmente el JSON
-        $data = json_decode($request->getContent(), true) ?? $request->all();
-        
-        $correo = $data['correo_electronico'] ?? $request->input('correo_electronico');
-        $password = $data['contraseña'] ?? $data['password'] ?? $request->input('contraseña') ?? $request->input('password');
-
-        if (!$correo || !$password) {
-            throw ValidationException::withMessages([
-                'correo_electronico' => ['El correo electrónico es requerido.'],
-                'contraseña' => ['La contraseña es requerida.'],
+        try {
+            \Illuminate\Support\Facades\Log::info('Login attempt started', [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'request_data' => $request->except(['contraseña', 'password'])
             ]);
-        }
 
-        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-            throw ValidationException::withMessages([
-                'correo_electronico' => ['El correo electrónico debe ser válido.'],
+            // Manejar posibles problemas de UTF-8 parseando manualmente el JSON
+            $data = json_decode($request->getContent(), true) ?? $request->all();
+            
+            $correo = $data['correo_electronico'] ?? $request->input('correo_electronico');
+            $password = $data['contraseña'] ?? $data['password'] ?? $request->input('contraseña') ?? $request->input('password');
+
+            if (!$correo || !$password) {
+                \Illuminate\Support\Facades\Log::warning('Login failed: missing credentials');
+                throw ValidationException::withMessages([
+                    'correo_electronico' => ['El correo electrónico es requerido.'],
+                    'contraseña' => ['La contraseña es requerida.'],
+                ]);
+            }
+
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                \Illuminate\Support\Facades\Log::warning('Login failed: invalid email format', ['email' => $correo]);
+                throw ValidationException::withMessages([
+                    'correo_electronico' => ['El correo electrónico debe ser válido.'],
+                ]);
+            }
+
+            $usuario = Usuario::where('correo_electronico', $correo)->first();
+
+            if (!$usuario) {
+                \Illuminate\Support\Facades\Log::warning('Login failed: user not found', ['email' => $correo]);
+                throw ValidationException::withMessages([
+                    'correo_electronico' => ['Estas credenciales no coinciden con nuestros registros.'],
+                ]);
+            }
+
+            if (!Hash::check($password, $usuario->contraseña)) {
+                \Illuminate\Support\Facades\Log::warning('Login failed: invalid password', ['user_id' => $usuario->id, 'email' => $correo]);
+                throw ValidationException::withMessages([
+                    'correo_electronico' => ['Estas credenciales no coinciden con nuestros registros.'],
+                ]);
+            }
+
+            \Illuminate\Support\Facades\Log::info('User authenticated successfully', ['user_id' => $usuario->id, 'role_id' => $usuario->rol_id]);
+
+            // Crear automáticamente el registro específico si no existe
+            try {
+                $roleServiceResult = UserRoleRegistrationService::createRoleSpecificRecord($usuario);
+                \Illuminate\Support\Facades\Log::info('Role specific record creation', ['result' => $roleServiceResult]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error creating role specific record', [
+                    'user_id' => $usuario->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // No lanzar error aquí, continuar con el login
+            }
+
+            $token = $usuario->createToken('API Token')->plainTextToken;
+            \Illuminate\Support\Facades\Log::info('Token created successfully', ['user_id' => $usuario->id]);
+
+            // Obtener datos completos del perfil
+            try {
+                $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
+                \Illuminate\Support\Facades\Log::info('Profile data obtained', ['user_id' => $usuario->id]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Error getting profile data', [
+                    'user_id' => $usuario->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // Fallback con datos básicos
+                $profileData = [
+                    'profile_complete' => false,
+                    'missing_fields' => [],
+                    'role_name' => $usuario->rol->nombre ?? 'Desconocido'
+                ];
+            }
+
+            $response = [
+                'usuario' => $usuario->fresh()->load(['rol', 'paciente', 'terapeuta', 'recepcionista', 'administrador']),
+                'token' => $token,
+                'profile_complete' => $profileData['profile_complete'],
+                'missing_fields' => $profileData['missing_fields'],
+                'role_name' => $profileData['role_name'],
+            ];
+
+            \Illuminate\Support\Facades\Log::info('Login completed successfully', ['user_id' => $usuario->id]);
+            return response()->json($response);
+
+        } catch (ValidationException $e) {
+            \Illuminate\Support\Facades\Log::warning('Login validation failed', ['errors' => $e->errors()]);
+            throw $e;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Unexpected login error', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            return response()->json([
+                'error' => 'Error interno del servidor',
+                'message' => config('app.debug') ? $e->getMessage() : 'Por favor, inténtalo de nuevo más tarde',
+                'debug' => config('app.debug') ? [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ] : null
+            ], 500);
         }
-
-        $usuario = Usuario::where('correo_electronico', $correo)->first();
-
-        if (! $usuario || ! Hash::check($password, $usuario->contraseña)) {
-            throw ValidationException::withMessages([
-                'correo_electronico' => ['Estas credenciales no coinciden con nuestros registros.'],
-            ]);
-        }
-
-        // Crear automáticamente el registro específico si no existe
-        UserRoleRegistrationService::createRoleSpecificRecord($usuario);
-
-        $token = $usuario->createToken('API Token')->plainTextToken;
-
-        // Obtener datos completos del perfil
-        $profileData = UserRoleRegistrationService::getUserProfileData($usuario);
-
-        return response()->json([
-            'usuario' => $usuario->fresh()->load(['rol', 'paciente', 'terapeuta', 'recepcionista', 'administrador']),
-            'token' => $token,
-            'profile_complete' => $profileData['profile_complete'],
-            'missing_fields' => $profileData['missing_fields'],
-            'role_name' => $profileData['role_name'],
-        ]);
     }
 
     public function logout(Request $request)

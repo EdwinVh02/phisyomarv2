@@ -292,6 +292,160 @@ Route::prefix('recepcionista')->middleware(['auth:sanctum', 'role:1,3'])->group(
 // ==========================================
 // RUTAS DE DESARROLLO Y TESTING
 // ==========================================
+
+// Debug específico para Railway (temporal)
+Route::get('debug-railway-login', function () {
+    try {
+        $debug = [];
+        
+        // 1. Verificar conexión BD
+        $debug['db_connection'] = 'OK';
+        $debug['usuarios_count'] = \App\Models\Usuario::count();
+        $debug['roles_count'] = \App\Models\Rol::count();
+        
+        // 2. Verificar terapeutas
+        $terapeutas = \App\Models\Usuario::where('rol_id', 2)->with('rol')->get();
+        $debug['terapeutas_count'] = $terapeutas->count();
+        $debug['terapeutas'] = $terapeutas->map(function($t) {
+            return [
+                'id' => $t->id,
+                'email' => $t->correo_electronico,
+                'rol' => $t->rol->nombre ?? 'N/A'
+            ];
+        });
+        
+        // 3. Verificar tabla terapeutas
+        try {
+            $debug['tabla_terapeutas_count'] = \App\Models\Terapeuta::count();
+        } catch (\Exception $e) {
+            $debug['tabla_terapeutas_error'] = $e->getMessage();
+        }
+        
+        // 4. Probar UserRoleRegistrationService
+        $testUser = $terapeutas->first();
+        if ($testUser) {
+            try {
+                $result = \App\Services\UserRoleRegistrationService::createRoleSpecificRecord($testUser);
+                $debug['role_service_create'] = $result;
+                
+                $profileData = \App\Services\UserRoleRegistrationService::getUserProfileData($testUser);
+                $debug['profile_data'] = [
+                    'role_name' => $profileData['role_name'],
+                    'profile_complete' => $profileData['profile_complete']
+                ];
+            } catch (\Exception $e) {
+                $debug['role_service_error'] = $e->getMessage();
+            }
+        }
+        
+        // 5. Configuración
+        $debug['config'] = [
+            'app_env' => config('app.env'),
+            'app_debug' => config('app.debug'),
+            'db_connection' => config('database.default'),
+            'timezone' => config('app.timezone')
+        ];
+        
+        return response()->json($debug);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});
+
+// Endpoint de prueba de login simplificado
+Route::post('debug-simple-login', function (\Illuminate\Http\Request $request) {
+    try {
+        \Illuminate\Support\Facades\Log::info('Debug login attempt', $request->all());
+        
+        $email = $request->input('correo_electronico') ?? $request->input('email');
+        $password = $request->input('contraseña') ?? $request->input('password');
+        
+        if (!$email || !$password) {
+            return response()->json(['error' => 'Email y contraseña requeridos'], 400);
+        }
+        
+        $usuario = \App\Models\Usuario::where('correo_electronico', $email)->first();
+        
+        if (!$usuario) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+        
+        if (!\Illuminate\Support\Facades\Hash::check($password, $usuario->contraseña)) {
+            return response()->json(['error' => 'Contraseña incorrecta'], 401);
+        }
+        
+        // Login exitoso - crear token
+        $token = $usuario->createToken('Debug API Token')->plainTextToken;
+        
+        return response()->json([
+            'success' => true,
+            'usuario' => $usuario,
+            'token' => $token,
+            'message' => 'Login exitoso'
+        ]);
+        
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Debug login error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
+// Endpoint para ver logs recientes (temporal para Railway)
+Route::get('debug-logs', function () {
+    try {
+        $logFile = storage_path('logs/laravel.log');
+        
+        if (!file_exists($logFile)) {
+            return response()->json(['error' => 'Log file not found']);
+        }
+        
+        // Leer las últimas 100 líneas del log
+        $lines = [];
+        $file = new SplFileObject($logFile, 'r');
+        $file->seek(PHP_INT_MAX);
+        $totalLines = $file->key();
+        
+        $linesToRead = min(100, $totalLines);
+        $startLine = max(0, $totalLines - $linesToRead);
+        
+        $file->seek($startLine);
+        while (!$file->eof()) {
+            $line = $file->current();
+            if (trim($line)) {
+                $lines[] = $line;
+            }
+            $file->next();
+        }
+        
+        return response()->json([
+            'total_lines' => $totalLines,
+            'showing_last' => count($lines),
+            'logs' => $lines
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
 if (app()->environment(['local', 'testing'])) {
     
     // Rutas básicas de prueba

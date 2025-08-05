@@ -358,6 +358,7 @@ Route::get('debug-railway-login', function () {
     }
 });
 
+
 // Endpoint de prueba de login simplificado
 Route::post('debug-simple-login', function (\Illuminate\Http\Request $request) {
     try {
@@ -400,6 +401,74 @@ Route::post('debug-simple-login', function (\Illuminate\Http\Request $request) {
             'error' => $e->getMessage(),
             'file' => $e->getFile(),
             'line' => $e->getLine()
+        ], 500);
+    }
+});
+
+// Test específico para UserRoleRegistrationService
+Route::get('debug-user-role-service/{userId}', function ($userId) {
+    try {
+        $usuario = \App\Models\Usuario::find($userId);
+        
+        if (!$usuario) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+        
+        $result = [];
+        $result['usuario'] = [
+            'id' => $usuario->id,
+            'email' => $usuario->correo_electronico,
+            'rol_id' => $usuario->rol_id
+        ];
+        
+        // Test createRoleSpecificRecord
+        try {
+            $createResult = \App\Services\UserRoleRegistrationService::createRoleSpecificRecord($usuario);
+            $result['createRoleSpecificRecord'] = $createResult;
+        } catch (\Exception $e) {
+            $result['createRoleSpecificRecord_error'] = $e->getMessage();
+        }
+        
+        // Test getUserProfileData
+        try {
+            $profileData = \App\Services\UserRoleRegistrationService::getUserProfileData($usuario);
+            $result['getUserProfileData'] = [
+                'role_name' => $profileData['role_name'],
+                'profile_complete' => $profileData['profile_complete'],
+                'missing_fields_count' => count($profileData['missing_fields'])
+            ];
+        } catch (\Exception $e) {
+            $result['getUserProfileData_error'] = $e->getMessage();
+        }
+        
+        // Verificar relaciones específicas
+        switch ($usuario->rol_id) {
+            case 2: // Terapeuta
+                try {
+                    $terapeuta = \App\Models\Terapeuta::find($usuario->id);
+                    $result['terapeuta_record'] = $terapeuta ? 'exists' : 'missing';
+                } catch (\Exception $e) {
+                    $result['terapeuta_error'] = $e->getMessage();
+                }
+                break;
+            case 4: // Paciente
+                try {
+                    $paciente = \App\Models\Paciente::find($usuario->id);
+                    $result['paciente_record'] = $paciente ? 'exists' : 'missing';
+                } catch (\Exception $e) {
+                    $result['paciente_error'] = $e->getMessage();
+                }
+                break;
+        }
+        
+        return response()->json($result);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
         ], 500);
     }
 });

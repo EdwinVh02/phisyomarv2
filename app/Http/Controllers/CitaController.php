@@ -18,7 +18,19 @@ class CitaController extends Controller
 
     public function index()
     {
-        return response()->json(Cita::all(), 200);
+        $citas = Cita::with([
+                'paciente.usuario', 
+                'terapeuta.usuario', 
+                'pagoActual',
+                'paquetePaciente'
+            ])
+            ->orderBy('fecha_hora', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $citas
+        ], 200);
     }
 
     public function store(StoreCitaRequest $request)
@@ -490,5 +502,207 @@ class CitaController extends Controller
                 })),
             ],
         ]);
+    }
+
+    /**
+     * Métodos específicos para la recepcionista
+     */
+    public function citasRecepcionista(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            // Verificar que el usuario sea recepcionista o administrador
+            if (!in_array($user->rol_id, [1, 3])) {
+                return response()->json(['error' => 'No autorizado.'], 403);
+            }
+
+            // Obtener parámetros de filtro
+            $fechaInicio = $request->get('fecha_inicio', now()->format('Y-m-d'));
+            $fechaFin = $request->get('fecha_fin', now()->addDays(7)->format('Y-m-d'));
+            $estado = $request->get('estado');
+            $terapeutaId = $request->get('terapeuta_id');
+
+            $query = Cita::with([
+                'paciente.usuario', 
+                'terapeuta.usuario', 
+                'pagoActual',
+                'paquetePaciente'
+            ]);
+
+            // Filtros
+            if ($fechaInicio && $fechaFin) {
+                $query->whereBetween('fecha_hora', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59']);
+            }
+
+            if ($estado) {
+                $query->where('estado', $estado);
+            }
+
+            if ($terapeutaId) {
+                $query->where('terapeuta_id', $terapeutaId);
+            }
+
+            $citas = $query->orderBy('fecha_hora', 'asc')->get();
+
+            // Agregar información de costo y estado de pago
+            $citas = $citas->map(function ($cita) {
+                $cita->costo_consulta = $this->calcularCostoCita($cita);
+                $cita->pagada = $cita->pagoActual !== null;
+                $cita->monto_pagado = $cita->pagoActual ? $cita->pagoActual->monto : 0;
+                return $cita;
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $citas,
+                'message' => 'Citas obtenidas correctamente'
+            ], 200);
+            
+        } catch (\Exception $e) {
+            Log::error('Error en citasRecepcionista: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calcular el costo de una cita
+     */
+    private function calcularCostoCita($cita)
+    {
+        // Si la cita tiene un paquete asociado, el costo podría ser diferente
+        if ($cita->paquetePaciente) {
+            // Lógica para paquetes - por ahora retornamos un valor fijo
+            return 800.00;
+        }
+
+        // Costo base según el tipo de cita o tarifa general
+        $tarifaGeneral = \App\Models\Tarifa::where('tipo', 'General')->first();
+        
+        if ($tarifaGeneral) {
+            return $tarifaGeneral->precio;
+        }
+
+        // Precio por defecto si no hay tarifa configurada
+        return 1000.00;
+    }
+
+    /**
+     * Procesar pago de una cita
+     */
+    public function procesarPago(Request $request, $citaId)
+    {
+        try {
+            $user = $request->user();
+
+            // Verificar que el usuario sea recepcionista o administrador
+            if (!in_array($user->rol_id, [1, 3])) {
+                return response()->json(['error' => 'No autorizado.'], 403);
+            }
+
+            // Validar datos del pago
+            $validatedData = $request->validate([
+                'monto' => 'required|numeric|min:0',
+                'forma_pago' => 'required|in:efectivo,transferencia,terminal',
+                'recibo' => 'nullable|string|max:100',
+                'autorizacion' => 'nullable|string|max:100',
+                'factura_emitida' => 'boolean'
+            ]);
+
+            // Buscar la cita
+            $cita = Cita::with(['paciente.usuario', 'terapeuta.usuario', 'pagoActual'])
+                         ->findOrFail($citaId);
+
+            // Verificar si ya está pagada
+            if ($cita->pagoActual) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta cita ya tiene un pago registrado'
+                ], 400);
+            }
+
+            // Crear el pago
+            $pago = \App\Models\Pago::create([
+                'fecha_hora' => now(),
+                'monto' => $validatedData['monto'],
+                'forma_pago' => $validatedData['forma_pago'],
+                'recibo' => $validatedData['recibo'] ?? null,
+                'cita_id' => $citaId,
+                'autorizacion' => $validatedData['autorizacion'] ?? null,
+                'factura_emitida' => $validatedData['factura_emitida'] ?? false,
+            ]);
+
+            // Actualizar estado de la cita si está pendiente
+            if ($cita->estado === 'agendada') {
+                $cita->update(['estado' => 'atendida']);
+            }
+
+            // Crear bitácora del pago
+            \Illuminate\Support\Facades\DB::table('bitacoras')->insert([
+                'usuario_id' => $user->id,
+                'accion' => 'pago_cita',
+                'tabla' => 'pagos',
+                'registro_id' => $pago->id,
+                'fecha_hora' => now(),
+                'detalle' => json_encode([
+                    'descripcion' => "Pago procesado para cita del paciente {$cita->paciente->usuario->nombre}",
+                    'cita_id' => $citaId,
+                    'paciente' => $cita->paciente->usuario->nombre,
+                    'monto' => $validatedData['monto'],
+                    'forma_pago' => $validatedData['forma_pago'],
+                    'fecha_cita' => $cita->fecha_hora,
+                ])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'pago' => $pago,
+                    'cita' => $cita->load('pagoActual')
+                ],
+                'message' => 'Pago procesado exitosamente'
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de validación incorrectos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al procesar pago: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener tarifas disponibles
+     */
+    public function obtenerTarifas()
+    {
+        try {
+            $tarifas = \App\Models\Tarifa::all();
+
+            return response()->json([
+                'success' => true,
+                'data' => $tarifas
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error al obtener tarifas: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -87,9 +87,9 @@ class RoleManagementController extends Controller
                 'motivo' => 'nullable|string|max:255'
             ]);
 
-            $usuario = Usuario::findOrFail($userId);
+            $usuario = Usuario::with('rol')->findOrFail($userId);
             $newRole = Rol::findOrFail($request->rol_id);
-            $oldRoleName = $usuario->getRoleName();
+            $oldRoleName = $usuario->rol ? $usuario->rol->name : 'Sin rol';
 
             // No permitir cambiar el rol del usuario actual si es admin
             if ($request->user()->id === $usuario->id && $request->user()->isAdmin()) {
@@ -109,19 +109,18 @@ class RoleManagementController extends Controller
             DB::table('bitacoras')->insert([
                 'usuario_id' => $request->user()->id,
                 'accion' => 'cambio_rol',
-                'tabla_afectada' => 'usuarios',
+                'tabla' => 'usuarios',
                 'registro_id' => $usuario->id,
-                'descripcion' => "Cambio de rol de '{$oldRoleName}' a '{$newRole->name}' para usuario {$usuario->correo_electronico}",
-                'detalles' => json_encode([
+                'fecha_hora' => now(),
+                'detalle' => json_encode([
+                    'descripcion' => "Cambio de rol de '{$oldRoleName}' a '{$newRole->name}' para usuario {$usuario->correo_electronico}",
                     'usuario_afectado' => $usuario->correo_electronico,
                     'rol_anterior' => $oldRoleName,
                     'rol_nuevo' => $newRole->name,
-                    'motivo' => $request->motivo ?? 'Sin motivo especificado'
-                ]),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'created_at' => now(),
-                'updated_at' => now()
+                    'motivo' => $request->motivo ?? 'Sin motivo especificado',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent')
+                ])
             ]);
 
             DB::commit();
@@ -176,19 +175,18 @@ class RoleManagementController extends Controller
             DB::table('bitacoras')->insert([
                 'usuario_id' => $request->user()->id,
                 'accion' => 'cambio_estatus',
-                'tabla_afectada' => 'usuarios',
+                'tabla' => 'usuarios',
                 'registro_id' => $usuario->id,
-                'descripcion' => "Cambio de estatus de '{$oldStatus}' a '{$request->estatus}' para usuario {$usuario->correo_electronico}",
-                'detalles' => json_encode([
+                'fecha_hora' => now(),
+                'detalle' => json_encode([
+                    'descripcion' => "Cambio de estatus de '{$oldStatus}' a '{$request->estatus}' para usuario {$usuario->correo_electronico}",
                     'usuario_afectado' => $usuario->correo_electronico,
                     'estatus_anterior' => $oldStatus,
                     'estatus_nuevo' => $request->estatus,
-                    'motivo' => $request->motivo ?? 'Sin motivo especificado'
-                ]),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->header('User-Agent'),
-                'created_at' => now(),
-                'updated_at' => now()
+                    'motivo' => $request->motivo ?? 'Sin motivo especificado',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->header('User-Agent')
+                ])
             ]);
 
             DB::commit();
@@ -263,7 +261,7 @@ class RoleManagementController extends Controller
                 ->select('bitacoras.*', 'usuarios.nombre', 'usuarios.apellido_paterno', 'usuarios.correo_electronico')
                 ->join('usuarios', 'bitacoras.usuario_id', '=', 'usuarios.id')
                 ->whereIn('bitacoras.accion', ['cambio_rol', 'cambio_estatus'])
-                ->orderBy('bitacoras.created_at', 'desc');
+                ->orderBy('bitacoras.fecha_hora', 'desc');
 
             if ($request->has('usuario_id') && $request->usuario_id !== '') {
                 $query->where('bitacoras.registro_id', $request->usuario_id);

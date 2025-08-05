@@ -30,7 +30,10 @@ class UserRoleRegistrationService
                     
                 case 2: // Terapeuta
                     if (!$usuario->terapeuta) {
-                        Terapeuta::create(['id' => $usuario->id]);
+                        Terapeuta::create([
+                            'id' => $usuario->id,
+                            'estatus' => 'activo'
+                        ]);
                         Log::info("Registro de terapeuta creado automáticamente para usuario ID: {$usuario->id}");
                     }
                     break;

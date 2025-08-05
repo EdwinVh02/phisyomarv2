@@ -98,7 +98,6 @@ class UsuarioObserver
                 if (!Recepcionista::find($usuario->id)) {
                     Recepcionista::create([
                         'id' => $usuario->id,
-                        // Los campos específicos se llenarán después
                     ]);
                     Log::info("Registro de recepcionista creado", ['usuario_id' => $usuario->id]);
                 }

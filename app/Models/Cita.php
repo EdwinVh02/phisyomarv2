@@ -56,6 +56,16 @@ class Cita extends Model
         return $this->belongsTo(Registro::class, 'registro_id');
     }
 
+    public function pagos()
+    {
+        return $this->hasMany(Pago::class, 'cita_id');
+    }
+
+    public function pagoActual()
+    {
+        return $this->hasOne(Pago::class, 'cita_id')->latest();
+    }
+
     /**
      * Verificar si una fecha y hora está disponible para un terapeuta
      */

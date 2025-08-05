@@ -59,11 +59,21 @@ class ProfileCompletionController extends Controller
      */
     public function completeProfile(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user() ?? Auth::user(); // Intentar obtener usuario de la request primero
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no autenticado'
+            ], 401);
+        }
 
         try {
             // Crear automáticamente el registro específico si no existe
             UserRoleRegistrationService::createRoleSpecificRecord($user);
+            
+            // Recargar el usuario con las relaciones después de crear registros
+            $user = $user->fresh(['rol', 'terapeuta', 'paciente', 'recepcionista', 'administrador']);
             
             // Validar datos según el rol
             $validatedData = $this->validateProfileData($request, $user->rol_id);
@@ -251,6 +261,9 @@ class ProfileCompletionController extends Controller
                     break;
                     
                 case 2: // Terapeuta
+                    // Recargar relación terapeuta
+                    $user->load('terapeuta');
+                    
                     if ($user->terapeuta) {
                         $user->terapeuta->update($validatedData);
                     } else {
@@ -259,6 +272,8 @@ class ProfileCompletionController extends Controller
                             'id' => $user->id,
                             'estatus' => 'activo'
                         ], $validatedData));
+                        // Recargar relación después de crear
+                        $user->load('terapeuta');
                     }
                     break;
                     

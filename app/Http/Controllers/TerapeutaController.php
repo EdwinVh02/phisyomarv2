@@ -15,7 +15,14 @@ class TerapeutaController extends Controller
 
     public function index()
     {
-        return response()->json(Terapeuta::all(), 200);
+        $terapeutas = Terapeuta::with(['usuario', 'especialidades'])
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $terapeutas
+        ], 200);
     }
 
     public function store(StoreTerapeutaRequest $request)
@@ -27,7 +34,13 @@ class TerapeutaController extends Controller
 
     public function show(Terapeuta $terapeuta)
     {
-        return response()->json($terapeuta, 200);
+        // Cargar las relaciones necesarias (sin experiencias por ahora)
+        $terapeuta->load(['usuario', 'especialidades']);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $terapeuta
+        ], 200);
     }
 
     public function update(UpdateTerapeutaRequest $request, Terapeuta $terapeuta)

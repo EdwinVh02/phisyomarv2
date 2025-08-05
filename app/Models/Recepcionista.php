@@ -11,14 +11,14 @@ class Recepcionista extends Model
 
     protected $table = 'recepcionistas';
 
-    protected $primaryKey = 'Id';
+    protected $primaryKey = 'id';
 
     public $timestamps = false;
 
-    protected $fillable = ['Id'];
+    protected $fillable = ['id'];
 
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'Id');
+        return $this->belongsTo(Usuario::class, 'id');
     }
 }

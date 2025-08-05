@@ -8,15 +8,21 @@ class Tarifa extends Model
 {
     protected $table = 'tarifas';
 
+    public $timestamps = false;
+
     protected $fillable = [
-        'Titulo',
-        'Precio',
-        'Tipo',
-        'Condiciones',
+        'titulo',
+        'precio',
+        'tipo',
+        'condiciones',
+    ];
+
+    protected $casts = [
+        'precio' => 'decimal:2',
     ];
 
     public function tratamientos()
     {
-        return $this->hasMany(Tratamiento::class, 'TarifaId');
+        return $this->hasMany(Tratamiento::class, 'tarifa_id');
     }
 }

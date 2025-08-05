@@ -233,10 +233,13 @@ Route::prefix('terapeuta')->middleware(['auth:sanctum', 'role:2'])->group(functi
     Route::post('pacientes/{pacienteId}/notas', [PacienteController::class, 'agregarNotaPaciente']);
 });
 
-// Rutas específicas para recepcionistas
-Route::prefix('recepcionista')->middleware(['auth:sanctum', 'role:3'])->group(function () {
+// Rutas específicas para recepcionistas (incluye administradores)
+Route::prefix('recepcionista')->middleware(['auth:sanctum', 'role:1,3'])->group(function () {
     Route::get('citas-hoy', [CitaController::class, 'citasHoy']);
     Route::post('registrar-llegada/{cita}', [CitaController::class, 'registrarLlegada']);
+    Route::get('citas', [CitaController::class, 'citasRecepcionista']);
+    Route::post('citas/{citaId}/pago', [CitaController::class, 'procesarPago']);
+    Route::get('tarifas', [CitaController::class, 'obtenerTarifas']);
 });
 
 // ==========================================

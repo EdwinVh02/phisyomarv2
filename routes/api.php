@@ -53,11 +53,56 @@ Route::apiResource('padecimientos', PadecimientoController::class)->only(['index
 Route::apiResource('tarifas', TarifaController::class)->only(['index', 'show']);
 Route::apiResource('tratamientos', TratamientoController::class)->only(['index', 'show']);
 
+// Paquetes públicos para consulta de precios
+Route::get('paquetes-publico', function () {
+    try {
+        $paquetes = \App\Models\PaqueteSesion::all();
+        return response()->json($paquetes);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Error al obtener paquetes: ' . $e->getMessage(),
+        ], 500);
+    }
+});
+
+Route::get('tarifas-publico', function () {
+    try {
+        $tarifas = \App\Models\Tarifa::all();
+        return response()->json($tarifas);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Error al obtener tarifas: ' . $e->getMessage(),
+        ], 500);
+    }
+});
+
 // Sistema de disponibilidad de citas
 Route::prefix('citas')->group(function () {
     Route::post('calendario-disponibilidad', [CitaController::class, 'calendarioDisponibilidad']);
     Route::post('horas-disponibles', [CitaController::class, 'horasDisponibles']);
     Route::post('fechas-disponibles', [CitaController::class, 'fechasDisponibles']);
+});
+
+// Debug de horarios disponibles
+Route::get('debug-horarios/{fecha}/{terapeutaId}', function ($fecha, $terapeutaId) {
+    try {
+        $debug = \App\Models\Cita::debugHorasDisponibles($fecha, $terapeutaId, 60);
+        $horasDisponibles = \App\Models\Cita::horasDisponibles($fecha, $terapeutaId, 60);
+        
+        return response()->json([
+            'fecha' => $fecha,
+            'terapeuta_id' => $terapeutaId,
+            'horas_disponibles_finales' => $horasDisponibles,
+            'debug_detallado' => $debug,
+            'total_disponibles' => count($horasDisponibles),
+            'hora_servidor' => \Carbon\Carbon::now()->format('Y-m-d H:i:s'),
+            'timezone_servidor' => config('app.timezone')
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Error en debug: ' . $e->getMessage()
+        ], 500);
+    }
 });
 
 // Información pública de terapeutas para pacientes
@@ -229,8 +274,10 @@ Route::prefix('terapeuta')->middleware(['auth:sanctum', 'role:2'])->group(functi
     Route::get('mis-pacientes', [PacienteController::class, 'misPacientes']);
     Route::get('estadisticas', [RegistroController::class, 'estadisticasTerapeuta']);
     Route::post('pacientes/{pacienteId}/historial-medico', [PacienteController::class, 'crearHistorialMedico']);
+    Route::put('pacientes/{pacienteId}/historial-medico', [\App\Http\Controllers\HistorialMedicoController::class, 'actualizarHistorialTerapeuta']);
     Route::post('pacientes/{pacienteId}/registros', [PacienteController::class, 'agregarRegistroHistorial']);
     Route::post('pacientes/{pacienteId}/notas', [PacienteController::class, 'agregarNotaPaciente']);
+    Route::post('citas/{citaId}/completar', [\App\Http\Controllers\CitaController::class, 'completarCita']);
 });
 
 // Rutas específicas para recepcionistas (incluye administradores)

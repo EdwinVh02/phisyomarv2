@@ -37,7 +37,15 @@ class CitaController extends Controller
     {
         $data = $request->validated();
 
-        return response()->json(Cita::create($data), 201);
+        $cita = Cita::create($data);
+
+        // Crear o actualizar historial médico automáticamente
+        if ($cita->paciente_id) {
+            $historialController = new \App\Http\Controllers\HistorialMedicoController();
+            $historialController->crearOActualizarDesdeCita($cita);
+        }
+
+        return response()->json($cita, 201);
     }
 
     public function show(Cita $cita)
@@ -200,6 +208,10 @@ class CitaController extends Controller
                 'antecedentes_patologicos' => ! empty($validatedData['antecedentes_patologicos']) ? $validatedData['antecedentes_patologicos'] : null,
                 'antecedentes_no_patologicos' => ! empty($validatedData['antecedentes_no_patologicos']) ? $validatedData['antecedentes_no_patologicos'] : null,
             ]);
+
+            // Crear o actualizar historial médico automáticamente
+            $historialController = new \App\Http\Controllers\HistorialMedicoController();
+            $historialController->crearOActualizarDesdeCita($cita);
 
             return response()->json([
                 'mensaje' => 'Cita agendada exitosamente',
@@ -704,5 +716,55 @@ class CitaController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Marcar una cita como completada y actualizar historial médico
+     */
+    public function completarCita(Request $request, $citaId)
+    {
+        $user = $request->user();
+        
+        // Verificar que el usuario es un terapeuta
+        if ($user->rol_id !== 2) {
+            return response()->json(['error' => 'Acceso denegado'], 403);
+        }
+
+        $cita = Cita::find($citaId);
+        if (!$cita) {
+            return response()->json(['error' => 'Cita no encontrada'], 404);
+        }
+
+        // Verificar que el terapeuta está asignado a esta cita
+        if ($cita->terapeuta_id !== $user->id) {
+            return response()->json(['error' => 'No autorizado para esta cita'], 403);
+        }
+
+        $data = $request->validate([
+            'escala_dolor_eva_fin' => 'sometimes|integer|min:0|max:10',
+            'observaciones_sesion' => 'sometimes|string',
+            'estado' => 'sometimes|in:completada,cancelada,no_asistio',
+        ]);
+
+        // Actualizar la cita
+        $cita->update([
+            'estado' => $data['estado'] ?? 'completada',
+            'escala_dolor_eva_fin' => $data['escala_dolor_eva_fin'] ?? null,
+            'observaciones' => isset($data['observaciones_sesion']) ? 
+                ($cita->observaciones ? $cita->observaciones . "\n\n--- Observaciones de la sesión ---\n" . $data['observaciones_sesion'] : $data['observaciones_sesion']) :
+                $cita->observaciones
+        ]);
+
+        // Actualizar historial médico con la evolución
+        if ($cita->estado === 'completada') {
+            $historialController = new \App\Http\Controllers\HistorialMedicoController();
+            $historialController->actualizarDespuesCita($cita);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cita marcada como completada',
+            'cita' => $cita->load(['paciente.usuario', 'terapeuta.usuario'])
+        ], 200);
     }
 }

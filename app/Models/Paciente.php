@@ -57,6 +57,11 @@ class Paciente extends Model
         return $this->hasOne(HistorialMedico::class, 'paciente_id');
     }
 
+    public function paquetes()
+    {
+        return $this->hasMany(PaquetePaciente::class, 'paciente_id');
+    }
+
     public function toArray()
     {
         $array = parent::toArray();

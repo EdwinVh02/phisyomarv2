@@ -111,7 +111,8 @@ class Cita extends Model
 
         $horasDisponibles = [];
 
-        // Para citas de 1 hora, generar horarios cada hora exacta
+        // Generar horarios cada hora desde las 8:00 hasta las 17:00
+        // Esto da 10 horarios posibles: 08:00, 09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00
         for ($hora = $horaInicio; $hora < $horaFin; $hora++) {
             $fechaHora = $fecha->copy()->hour($hora)->minute(0)->second(0);
 
@@ -120,8 +121,14 @@ class Cita extends Model
                 continue;
             }
 
-            // Verificar que no sea en el pasado
-            if ($fechaHora->isPast()) {
+            // Para fechas futuras, permitir todas las horas
+            // Para el día de hoy, solo permitir horas que no hayan pasado
+            if ($fecha->isToday()) {
+                if ($fechaHora->isPast()) {
+                    continue;
+                }
+            } else if ($fecha->isPast()) {
+                // Si la fecha completa está en el pasado, no devolver ninguna hora
                 continue;
             }
 
@@ -132,6 +139,63 @@ class Cita extends Model
         }
 
         return $horasDisponibles;
+    }
+
+    /**
+     * Método de debug para ver por qué solo aparecen ciertas horas
+     */
+    public static function debugHorasDisponibles($fecha, $terapeutaId, $duracion = 60)
+    {
+        $fecha = Carbon::parse($fecha);
+        $horaInicio = 8;
+        $horaFin = 18;
+        $debug = [];
+
+        for ($hora = $horaInicio; $hora < $horaFin; $hora++) {
+            $fechaHora = $fecha->copy()->hour($hora)->minute(0)->second(0);
+            
+            $info = [
+                'hora' => $fechaHora->format('H:i'),
+                'fecha_hora_completa' => $fechaHora->format('Y-m-d H:i:s'),
+                'es_pasado' => $fechaHora->isPast(),
+                'es_hoy' => $fecha->isToday(),
+                'hora_actual' => Carbon::now()->format('H:i:s'),
+            ];
+
+            // Verificar si se extiende más allá del horario
+            if ($fechaHora->copy()->addMinutes($duracion)->hour > $horaFin) {
+                $info['razon'] = 'Se extiende más allá del horario laboral';
+                $debug[] = $info;
+                continue;
+            }
+
+            // Verificar si es en el pasado
+            if ($fecha->isToday()) {
+                if ($fechaHora->isPast()) {
+                    $info['razon'] = 'Hora ya pasada (es hoy)';
+                    $debug[] = $info;
+                    continue;
+                }
+            } else if ($fecha->isPast()) {
+                $info['razon'] = 'Fecha completa en el pasado';
+                $debug[] = $info;
+                continue;
+            }
+
+            // Verificar disponibilidad
+            $estaDisponible = static::estaDisponible($fechaHora, $terapeutaId, $duracion);
+            $info['esta_disponible'] = $estaDisponible;
+            
+            if ($estaDisponible) {
+                $info['razon'] = 'DISPONIBLE';
+            } else {
+                $info['razon'] = 'Ocupada o en conflicto';
+            }
+
+            $debug[] = $info;
+        }
+
+        return $debug;
     }
 
     /**

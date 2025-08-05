@@ -242,24 +242,45 @@ class ProfileCompletionController extends Controller
                 case 4: // Paciente
                     if ($user->paciente) {
                         $user->paciente->update($validatedData);
+                    } else {
+                        // Crear registro de paciente si no existe
+                        \App\Models\Paciente::create(array_merge([
+                            'id' => $user->id
+                        ], $validatedData));
                     }
                     break;
                     
                 case 2: // Terapeuta
                     if ($user->terapeuta) {
                         $user->terapeuta->update($validatedData);
+                    } else {
+                        // Crear registro de terapeuta si no existe
+                        \App\Models\Terapeuta::create(array_merge([
+                            'id' => $user->id,
+                            'estatus' => 'activo'
+                        ], $validatedData));
                     }
                     break;
                     
                 case 3: // Recepcionista
                     if ($user->recepcionista) {
                         $user->recepcionista->update($validatedData);
+                    } else {
+                        // Crear registro de recepcionista si no existe
+                        \App\Models\Recepcionista::create(array_merge([
+                            'id' => $user->id
+                        ], $validatedData));
                     }
                     break;
                     
                 case 1: // Administrador
                     if ($user->administrador) {
                         $user->administrador->update($validatedData);
+                    } else {
+                        // Crear registro de administrador si no existe
+                        \App\Models\Administrador::create(array_merge([
+                            'id' => $user->id
+                        ], $validatedData));
                     }
                     break;
             }
